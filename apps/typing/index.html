@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Game | refteen DEV</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  height: 100%;
+  background: #080818;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: #e2e8f0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+#header { position: fixed; top: 14px; left: 18px; font-size: 11px; color: #c770f0; letter-spacing: 2px; font-weight: 700; font-family: monospace; }
+#top-bar {
+  display: flex; gap: 24px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 50px;
+  padding: 10px 28px;
+}
+.stat { text-align: center; }
+.stat-v { font-size: 20px; font-weight: 800; color: #38bdf8; line-height: 1; }
+.stat-l { font-size: 9px; color: #475569; letter-spacing: 1.5px; margin-top: 3px; text-transform: uppercase; }
+#moves-v { color: #c770f0; }
+#grid {
+  display: grid;
+  grid-template-columns: repeat(4, 80px);
+  gap: 10px;
+}
+.card {
+  width: 80px; height: 80px;
+  cursor: pointer;
+  perspective: 600px;
+  position: relative;
+}
+.card__inner {
+  width: 100%; height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+  border-radius: 14px;
+}
+.card.flipped .card__inner,
+.card.matched .card__inner { transform: rotateY(180deg); }
+.card__front, .card__back {
+  position: absolute; inset: 0;
+  border-radius: 14px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.card__front {
+  background: #0d0d24;
+  border: 1px solid rgba(199,112,240,0.2);
+  font-size: 28px;
+  color: #1e1e40;
+  user-select: none;
+}
+.card__front::after {
+  content: '?';
+  font-size: 22px;
+  font-weight: 800;
+  color: rgba(199,112,240,0.3);
+}
+.card__back {
+  background: #0f0f28;
+  border: 1px solid rgba(255,255,255,0.1);
+  transform: rotateY(180deg);
+  font-size: 34px;
+}
+.card.matched .card__back {
+  border-color: rgba(74,222,128,0.5);
+  background: rgba(74,222,128,0.07);
+  box-shadow: 0 0 18px rgba(74,222,128,0.2);
+}
+.card:hover:not(.flipped):not(.matched) .card__front {
+  border-color: rgba(199,112,240,0.5);
+  background: #13132e;
+}
+#win-screen {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(8,8,24,0.92);
+  backdrop-filter: blur(10px);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 10;
+}
+#win-screen h2 { font-size: 28px; color: #4ade80; letter-spacing: 3px; }
+#win-screen p { color: #64748b; font-size: 14px; }
+.win-stats { display: flex; gap: 48px; text-align: center; }
+.win-stats .wv { font-size: 36px; font-weight: 900; color: #38bdf8; }
+.win-stats .wl { font-size: 10px; color: #475569; letter-spacing: 2px; margin-top: 4px; text-transform: uppercase; }
+#replay-btn {
+  padding: 12px 32px;
+  background: transparent;
+  border: 1.5px solid #c770f0;
+  border-radius: 50px;
+  color: #c770f0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+#replay-btn:hover { background: rgba(199,112,240,0.12); }
+</style>
+</head>
+<body>
+<div id="header">Memory Game | refteen DEV</div>
+<div id="top-bar">
+  <div class="stat"><div class="stat-v" id="moves-v">0</div><div class="stat-l">Ходов</div></div>
+  <div class="stat"><div class="stat-v" id="pairs-v">0/8</div><div class="stat-l">Пары</div></div>
+  <div class="stat"><div class="stat-v" id="time-v">0:00</div><div class="stat-l">Время</div></div>
+</div>
+<div id="grid"></div>
+<div id="win-screen">
+  <h2>🎉 ПОБЕДА!</h2>
+  <div class="win-stats">
+    <div><div class="wv" id="w-moves">0</div><div class="wl">Ходов</div></div>
+    <div><div class="wv" id="w-time">0:00</div><div class="wl">Время</div></div>
+  </div>
+  <p id="w-rank"></p>
+  <button id="replay-btn">Играть снова</button>
+</div>
+<script>
+const ICONS = ['⚛️','🟨','🟦','🐍','🐳','🔷','🌿','💾']
+// React, JS, TypeScript, Python, Docker, Next.js, Node.js, DB
+
+let cards = [], flipped = [], matched = 0, moves = 0, locked = false
+let seconds = 0, timerInt = null, started = false
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
+function formatTime(s) {
+  return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`
+}
+
+function render() {
+  const grid = document.getElementById('grid')
+  grid.innerHTML = ''
+  cards.forEach((c, i) => {
+    const el = document.createElement('div')
+    el.className = 'card' + (c.flipped ? ' flipped' : '') + (c.matched ? ' matched' : '')
+    el.innerHTML = `<div class="card__inner"><div class="card__front"></div><div class="card__back">${c.icon}</div></div>`
+    el.addEventListener('click', () => onCardClick(i))
+    grid.appendChild(el)
+  })
+  document.getElementById('moves-v').textContent = moves
+  document.getElementById('pairs-v').textContent = `${matched}/8`
+  document.getElementById('time-v').textContent = formatTime(seconds)
+}
+
+function onCardClick(i) {
+  const c = cards[i]
+  if (locked || c.flipped || c.matched) return
+
+  if (!started) {
+    started = true
+    timerInt = setInterval(() => {
+      seconds++
+      document.getElementById('time-v').textContent = formatTime(seconds)
+    }, 1000)
+  }
+
+  c.flipped = true
+  flipped.push(i)
+  render()
+
+  if (flipped.length === 2) {
+    moves++
+    locked = true
+    const [a, b] = flipped
+    if (cards[a].icon === cards[b].icon) {
+      cards[a].matched = cards[b].matched = true
+      matched++
+      flipped = []
+      locked = false
+      render()
+      if (matched === 8) showWin()
+    } else {
+      setTimeout(() => {
+        cards[a].flipped = cards[b].flipped = false
+        flipped = []
+        locked = false
+        render()
+      }, 900)
+    }
+  }
+}
+
+function showWin() {
+  clearInterval(timerInt)
+  document.getElementById('w-moves').textContent = moves
+  document.getElementById('w-time').textContent = formatTime(seconds)
+  const ranks = [[15,'🏆 Легенда!'], [25,'⚡ Отлично!'], [40,'👍 Хорошо'], [Infinity,'💪 Продолжай!']]
+  document.getElementById('w-rank').textContent = ranks.find(r => moves <= r[0])[1]
+  document.getElementById('win-screen').style.display = 'flex'
+}
+
+function init() {
+  const deck = shuffle([...ICONS, ...ICONS])
+  cards = deck.map(icon => ({ icon, flipped: false, matched: false }))
+  flipped = []; matched = 0; moves = 0; seconds = 0; locked = false; started = false
+  clearInterval(timerInt)
+  document.getElementById('win-screen').style.display = 'none'
+  render()
+}
+
+document.getElementById('replay-btn').addEventListener('click', init)
+init()
+</script>
+</body>
+</html>
