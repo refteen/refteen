@@ -1,0 +1,123 @@
+.contact {
+  padding: 110px 8%;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.contact__inner {
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.contact__card-grid {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 48px;
+}
+
+.contact__tagline {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin-bottom: 12px;
+}
+
+.contact__body {
+  color: #64748b;
+  font-size: 0.98rem;
+  line-height: 1.8;
+  margin-bottom: 40px;
+  max-width: 440px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.contact__list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+
+.contact__item {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  padding: 18px 22px;
+  text-decoration: none;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.contact__item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--cc, #c770f0);
+  border-radius: 3px 0 0 3px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.contact__item:hover::before { opacity: 1; }
+
+.contact__item:hover {
+  border-color: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  transform: translateX(0);
+}
+
+.contact__item-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact__item-label {
+  font-size: 0.72rem;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 3px;
+}
+
+.contact__item-value {
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.contact__item-arrow {
+  margin-left: auto;
+  color: #334155;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.contact__item:hover .contact__item-arrow {
+  color: var(--cc, #c770f0);
+  transform: translateX(3px);
+}
+
+@media (max-width: 600px) {
+  .contact { padding: 80px 6%; }
+  .contact__card-grid { padding: 28px 20px; }
+}

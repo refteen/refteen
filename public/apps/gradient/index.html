@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gradient Gen | refteen DEV</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #080818; min-height: 100vh; font-family: monospace; color: #fff; overflow: hidden; }
+#header { position: absolute; top: 18px; left: 22px; z-index: 10; font-size: 13px; color: #c770f0; letter-spacing: 2px; font-weight: bold; }
+#preview { position: fixed; inset: 0; transition: background .3s ease; z-index: 0; }
+#panel {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+  background: rgba(8,8,24,0.68);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid rgba(199,112,240,0.15);
+  padding: 18px 32px 22px;
+}
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; margin-bottom: 12px; }
+.ctrl { display: flex; flex-direction: column; gap: 6px; }
+.lbl { font-size: 11px; color: #555; letter-spacing: 2px; text-transform: uppercase; }
+input[type=color] { width: 40px; height: 34px; border: 2px solid #c770f030; border-radius: 6px; background: none; cursor: pointer; padding: 2px; }
+input[type=range] { -webkit-appearance: none; height: 4px; background: #c770f030; border-radius: 4px; width: 150px; outline: none; cursor: pointer; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 15px; border-radius: 50%; background: #c770f0; cursor: pointer; }
+.tog-grp { display: flex; border: 1.5px solid #c770f040; border-radius: 8px; overflow: hidden; }
+.tog { padding: 7px 16px; background: transparent; border: none; color: #777; font-family: monospace; font-size: 12px; cursor: pointer; transition: all .2s; letter-spacing: 1px; }
+.tog.on { background: #c770f0; color: #fff; }
+#c3tog { background: transparent; border: 1.5px solid #c770f040; border-radius: 6px; padding: 6px 12px; color: #777; font-family: monospace; font-size: 12px; cursor: pointer; transition: all .2s; }
+#c3tog.on { border-color: #38bdf8; color: #38bdf8; }
+#c3grp { display: none; }
+#c3grp.show { display: flex; }
+#angval { color: #38bdf8; }
+#cssout { flex: 1; background: #0d0d22; border: 1px solid #c770f020; border-radius: 6px; padding: 9px 14px; font-size: 13px; color: #38bdf8; min-width: 180px; word-break: break-all; }
+#copybtn { padding: 9px 20px; background: transparent; border: 2px solid #c770f0; border-radius: 8px; color: #c770f0; font-family: monospace; font-size: 13px; letter-spacing: 1px; cursor: pointer; white-space: nowrap; transition: all .2s; }
+#copybtn:hover { background: #c770f015; }
+.preset-btn { width: 36px; height: 36px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; transition: transform .15s, border-color .15s; flex-shrink: 0; }
+.preset-btn:hover { transform: scale(1.15); border-color: rgba(255,255,255,.5); }
+</style>
+</head>
+<body>
+<div id="header">Gradient Gen | refteen DEV</div>
+<div id="preview"></div>
+<div id="panel">
+  <div class="row">
+    <div class="ctrl"><div class="lbl">Цвет 1</div><input type="color" id="c1" value="#c770f0"></div>
+    <div class="ctrl"><div class="lbl">Цвет 2</div><input type="color" id="c2" value="#38bdf8"></div>
+    <div class="ctrl" id="c3grp"><div class="lbl">Цвет 3</div><input type="color" id="c3" value="#ff6b8a"></div>
+    <div class="ctrl"><div class="lbl">3-й цвет</div><button id="c3tog">+ Добавить</button></div>
+    <div class="ctrl" id="anggrp"><div class="lbl">Угол <span id="angval">135°</span></div><input type="range" id="ang" min="0" max="360" value="135"></div>
+    <div class="ctrl"><div class="lbl">Тип</div>
+      <div class="tog-grp">
+        <button class="tog on" id="btnlin">Linear</button>
+        <button class="tog" id="btnrad">Radial</button>
+      </div>
+    </div>
+    <div class="ctrl"><div class="lbl">Пресеты</div>
+      <div style="display:flex;gap:8px;" id="presets"></div>
+    </div>
+  </div>
+  <div class="row" style="margin-bottom:0;">
+    <code id="cssout"></code>
+    <button id="copybtn">Скопировать CSS</button>
+  </div>
+</div>
+<script>
+const PRESETS = [
+  {c1:'#c770f0',c2:'#38bdf8',c3:null,ang:135,type:'linear'},
+  {c1:'#ff6b8a',c2:'#ffd166',c3:null,ang:45,type:'linear'},
+  {c1:'#06d6a0',c2:'#118ab2',c3:null,ang:160,type:'linear'},
+  {c1:'#f72585',c2:'#7209b7',c3:'#3a0ca3',ang:135,type:'linear'},
+  {c1:'#ff9a00',c2:'#ff0076',c3:null,ang:90,type:'radial'},
+  {c1:'#0f2027',c2:'#2c5364',c3:'#203a43',ang:180,type:'linear'}
+];
+
+let useC3 = false, gType = 'linear';
+const c1 = document.getElementById('c1');
+const c2 = document.getElementById('c2');
+const c3 = document.getElementById('c3');
+const ang = document.getElementById('ang');
+const angval = document.getElementById('angval');
+const preview = document.getElementById('preview');
+const cssout = document.getElementById('cssout');
+const copybtn = document.getElementById('copybtn');
+const c3grp = document.getElementById('c3grp');
+const c3tog = document.getElementById('c3tog');
+const anggrp = document.getElementById('anggrp');
+
+function buildCSS() {
+  const stops = useC3 ? [c1.value, c3.value, c2.value] : [c1.value, c2.value];
+  return gType === 'linear'
+    ? `linear-gradient(${ang.value}deg, ${stops.join(', ')})`
+    : `radial-gradient(circle at center, ${stops.join(', ')})`;
+}
+
+function update() {
+  const css = buildCSS();
+  preview.style.background = css;
+  cssout.textContent = `background: ${css};`;
+}
+
+[c1, c2, c3].forEach(el => el.addEventListener('input', update));
+ang.addEventListener('input', () => { angval.textContent = ang.value + '°'; update(); });
+
+document.getElementById('btnlin').addEventListener('click', () => {
+  gType = 'linear';
+  document.getElementById('btnlin').classList.add('on');
+  document.getElementById('btnrad').classList.remove('on');
+  anggrp.style.display = '';
+  update();
+});
+document.getElementById('btnrad').addEventListener('click', () => {
+  gType = 'radial';
+  document.getElementById('btnrad').classList.add('on');
+  document.getElementById('btnlin').classList.remove('on');
+  anggrp.style.display = 'none';
+  update();
+});
+
+c3tog.addEventListener('click', () => {
+  useC3 = !useC3;
+  c3grp.classList.toggle('show', useC3);
+  c3tog.classList.toggle('on', useC3);
+  c3tog.textContent = useC3 ? '- Убрать' : '+ Добавить';
+  update();
+});
+
+copybtn.addEventListener('click', () => {
+  navigator.clipboard.writeText(cssout.textContent).then(() => {
+    copybtn.textContent = 'Скопировано!';
+    copybtn.style.borderColor = '#38bdf8';
+    copybtn.style.color = '#38bdf8';
+    setTimeout(() => {
+      copybtn.textContent = 'Скопировать CSS';
+      copybtn.style.borderColor = '#c770f0';
+      copybtn.style.color = '#c770f0';
+    }, 2000);
+  });
+});
+
+const presetsEl = document.getElementById('presets');
+PRESETS.forEach((p) => {
+  const stops = p.c3 ? [p.c1, p.c3, p.c2] : [p.c1, p.c2];
+  const grad = p.type === 'radial'
+    ? `radial-gradient(circle, ${stops.join(',')})`
+    : `linear-gradient(${p.ang}deg, ${stops.join(',')})`;
+  const btn = document.createElement('button');
+  btn.className = 'preset-btn';
+  btn.style.background = grad;
+  btn.title = grad;
+  btn.addEventListener('click', () => {
+    c1.value = p.c1; c2.value = p.c2;
+    if (p.c3) { c3.value = p.c3; if (!useC3) c3tog.click(); }
+    else if (useC3) c3tog.click();
+    ang.value = p.ang; angval.textContent = p.ang + '°';
+    const isLinear = p.type === 'linear';
+    if (isLinear && gType !== 'linear') document.getElementById('btnlin').click();
+    if (!isLinear && gType !== 'radial') document.getElementById('btnrad').click();
+    update();
+  });
+  presetsEl.appendChild(btn);
+});
+
+update();
+</script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+.home {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  padding: 120px 8% 80px;
+}
+
+.home__content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.home__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(199,112,240,0.12);
+  border: 1px solid rgba(199,112,240,0.3);
+  padding: 7px 16px;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #c770f0;
+  margin-bottom: 24px;
+}
+
+.home__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 8px #4ade80;
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.home__title {
+  font-size: clamp(2.8rem, 6vw, 4.8rem);
+  font-weight: 900;
+  line-height: 1.05;
+  margin-bottom: 10px;
+  letter-spacing: -1px;
+}
+
+.home__title--grad {
+  background: linear-gradient(90deg, #c770f0 0%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.home__name {
+  font-size: 1rem;
+  color: #64748b;
+  font-weight: 600;
+  margin-bottom: 20px;
+  letter-spacing: 0.5px;
+}
+
+.home__desc {
+  font-size: 1rem;
+  color: #94a3b8;
+  line-height: 1.75;
+  max-width: 480px;
+  margin-bottom: 36px;
+}
+
+.home__actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.btn-grad {
+  background: linear-gradient(135deg, #c770f0, #7c3aed);
+  color: #fff;
+  padding: 13px 30px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-decoration: none;
+  transition: all 0.3s;
+  box-shadow: 0 4px 24px rgba(199,112,240,0.4);
+  white-space: nowrap;
+}
+
+.btn-grad:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(199,112,240,0.55);
+}
+
+.btn-ghost {
+  border: 1.5px solid rgba(199,112,240,0.4);
+  color: #c770f0;
+  padding: 11px 28px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.btn-ghost:hover {
+  background: rgba(199,112,240,0.1);
+  border-color: #c770f0;
+}
+
+.home__socials {
+  display: flex;
+  gap: 16px;
+}
+
+.home__socials a {
+  color: #475569;
+  font-size: 1.4rem;
+  transition: all 0.25s;
+}
+
+.home__socials a:hover {
+  color: #c770f0;
+  transform: translateY(-3px);
+}
+
+/* Code card */
+.home__code-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.code-card__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 18px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.dot.red { background: #ff5f57; }
+.dot.yellow { background: #febc2e; }
+.dot.green { background: #28c840; }
+
+.code-card__filename {
+  margin-left: 8px;
+  font-size: 0.78rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+.code-card__body {
+  padding: 24px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  line-height: 1.8;
+  color: #94a3b8;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.code-typewriter {
+  color: #a5f3fc;
+}
+
+.code-cursor {
+  color: #c770f0;
+  animation: blink-cursor 0.7s step-end infinite;
+  font-weight: 100;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.home__scroll-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #475569;
+  font-size: 1.5rem;
+  cursor: pointer;
+  animation: bounce 2s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(8px); }
+}
+
+@media (max-width: 900px) {
+  .home__content { grid-template-columns: 1fr; gap: 40px; }
+  .home__code-card { display: none; }
+  .home { padding: 110px 6% 70px; }
+}

@@ -1,0 +1,123 @@
+.about {
+  padding: 110px 8%;
+  background: var(--bg-section);
+  position: relative;
+  overflow: hidden;
+}
+
+.about__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 70px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.about__left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+.about__avatar-wrap {
+  position: relative;
+  width: 200px;
+  height: 200px;
+}
+
+.about__avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c770f0 0%, #7c3aed 50%, #38bdf8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.2rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 2px;
+  position: relative;
+  z-index: 1;
+}
+
+.about__avatar-ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px dashed rgba(199,112,240,0.4);
+  animation: spin 12s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.about__facts {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.about__fact {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 14px 18px;
+}
+
+.about__fact-icon {
+  color: #c770f0;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.about__fact-label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.about__fact-sub {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.about__text {
+  color: #94a3b8;
+  font-size: 0.98rem;
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+
+.about__text strong { color: #e2e8f0; }
+
+.about__link {
+  color: #c770f0;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(199,112,240,0.4);
+  transition: border-color 0.2s;
+}
+.about__link:hover { border-color: #c770f0; }
+
+.about__ctas {
+  display: flex;
+  gap: 16px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 880px) {
+  .about { padding: 80px 6%; }
+  .about__inner { grid-template-columns: 1fr; gap: 48px; }
+  .about__left { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+}
