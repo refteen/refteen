@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FaGithub, FaExternalLinkAlt, FaMap, FaServer, FaEnvelope, FaGamepad, FaYoutube, FaCode, FaKeyboard, FaPalette, FaTimes, FaPlay } from 'react-icons/fa'
+import { FaGithub, FaExternalLinkAlt, FaMap, FaServer, FaEnvelope, FaGamepad, FaYoutube, FaCode, FaKeyboard, FaPalette, FaTimes, FaPlay, FaLaptopCode } from 'react-icons/fa'
+import { FaCow } from 'react-icons/fa6'
 import './Projects.css'
 
 const projects = [
@@ -27,52 +28,52 @@ const projects = [
     app: null,
   },
   {
+    title: 'AnimalFeedPlanner',
+    desc: 'Десктопное Java-приложение для расчёта рационов сельхозживотных. Подбор кормов под потребности животного, график питательных веществ, сохранение рациона в JSON. Курсовой проект.',
+    tags: ['Java', 'Maven', 'Swing', 'ООП'],
+    live: null,
+    github: 'https://github.com/refteen/AnimalFeedPlanner',
+    icon: <FaCow />,
+    color: '#f59e0b',
+    bg: 'linear-gradient(135deg, #2a1a05 0%, #140c02 100%)',
+    app: null,
+  },
+  {
     title: 'Snake Game',
     desc: 'Аркадная змейка прямо в браузере. Управление стрелками/WASD, нарастающая скорость, сохранение рекорда в localStorage.',
     tags: ['HTML', 'CSS', 'JavaScript', 'Canvas'],
     live: null,
-    github: 'https://github.com/refteen',
+    github: 'https://github.com/refteen/snake-game',
     icon: <FaGamepad />,
     color: '#4ade80',
     bg: 'linear-gradient(135deg, #0a1e0e 0%, #060f08 100%)',
-    app: '/apps/snake/index.html',
+    app: '/refteen/apps/snake/index.html',
   },
   {
     title: 'Memory Game',
     desc: 'Игра на память: переворачивай карточки с иконками технологий и находи пары. Счётчик ходов, таймер и ранг по результату.',
     tags: ['HTML', 'CSS', 'JavaScript'],
     live: null,
-    github: 'https://github.com/refteen',
+    github: 'https://github.com/refteen/memory-game',
     icon: <FaKeyboard />,
     color: '#f59e0b',
     bg: 'linear-gradient(135deg, #1e1500 0%, #110c00 100%)',
-    app: '/apps/typing/index.html',
+    app: '/refteen/apps/typing/index.html',
   },
   {
     title: 'CSS Gradient Generator',
     desc: 'Генератор CSS-градиентов с живым превью. Два/три цвета, угол, linear/radial, 6 пресетов, копирование CSS одной кнопкой.',
     tags: ['HTML', 'CSS', 'JavaScript'],
     live: null,
-    github: 'https://github.com/refteen',
+    github: 'https://github.com/refteen/css-gradient-generator',
     icon: <FaPalette />,
     color: '#c770f0',
     bg: 'linear-gradient(135deg, #1a0a24 0%, #0f0614 100%)',
-    app: '/apps/gradient/index.html',
-  },
-  {
-    title: '1sec Email Telegram Bot',
-    desc: 'Telegram-бот для генерации временных email-адресов. Получай и читай письма прямо в Telegram без регистрации.',
-    tags: ['Python', 'Telegram Bot API'],
-    live: null,
-    github: 'https://github.com/refteen/1secEmail-Telegram-BOT',
-    icon: <FaEnvelope />,
-    color: '#ffd43b',
-    bg: 'linear-gradient(135deg, #1e1a00 0%, #120f00 100%)',
-    app: null,
+    app: '/refteen/apps/gradient/index.html',
   },
   {
     title: 'AutoAccept Dota 2',
-    desc: 'Python-скрипт, который автоматически принимает найденный матч в Dota 2. Никогда не пропускай очередь.',
+    desc: 'Python-скрипт, который автоматически принимает найденный матч в Dota 2.',
     tags: ['Python', 'Computer Vision'],
     live: null,
     github: 'https://github.com/refteen/AutoAccept-Dota2',
@@ -92,10 +93,50 @@ const projects = [
     bg: 'linear-gradient(135deg, #1e0a06 0%, #120400 100%)',
     app: null,
   },
+  {
+    title: 'ООП на C#',
+    desc: 'Лабораторные работы по объектно-ориентированному программированию на C#: наследование, интерфейсы, полиморфизм, обработка исключений и паттерны проектирования.',
+    tags: ['C#', '.NET', 'ООП'],
+    live: null,
+    github: 'https://github.com/refteen/labs-object-oriented-programming',
+    icon: <FaLaptopCode />,
+    color: '#a179dc',
+    bg: 'linear-gradient(135deg, #1a1030 0%, #0d0818 100%)',
+    app: null,
+  },
+  {
+    title: '1sec Email Telegram Bot',
+    desc: 'Telegram-бот для генерации временных email-адресов. Получай и читай письма прямо в Telegram без регистрации.',
+    tags: ['Python', 'Telegram Bot API'],
+    live: null,
+    github: 'https://github.com/refteen/1secEmail-Telegram-BOT',
+    icon: <FaEnvelope />,
+    color: '#ffd43b',
+    bg: 'linear-gradient(135deg, #1e1a00 0%, #120f00 100%)',
+    app: null,
+  },
 ]
 
 export default function Projects() {
   const [modal, setModal] = useState(null)
+
+  const handleTilt = e => {
+    const card = e.currentTarget
+    const inner = card.querySelector('.project-card__tilt')
+    const glare = card.querySelector('.project-card__glare')
+    const r = card.getBoundingClientRect()
+    const px = (e.clientX - r.left) / r.width
+    const py = (e.clientY - r.top) / r.height
+    if (inner) inner.style.transform = `rotateX(${(0.5 - py) * 11}deg) rotateY(${(px - 0.5) * 11}deg)`
+    if (glare) glare.style.background = `radial-gradient(circle at ${px * 100}% ${py * 100}%, rgba(255,255,255,0.16), transparent 46%)`
+  }
+
+  const resetTilt = e => {
+    const inner = e.currentTarget.querySelector('.project-card__tilt')
+    const glare = e.currentTarget.querySelector('.project-card__glare')
+    if (inner) inner.style.transform = ''
+    if (glare) glare.style.background = 'transparent'
+  }
 
   return (
     <section id="projects" className="projects">
@@ -114,8 +155,12 @@ export default function Projects() {
               viewport={{ once: true }}
               transition={{ delay: i * 0.1, duration: 0.5 }}
               whileHover={{ y: -6 }}
+              onMouseMove={handleTilt}
+              onMouseLeave={resetTilt}
             >
-              <div className="project-card__banner" style={{ background: p.bg }}>
+              <div className="project-card__tilt">
+                <span className="project-card__glare" />
+                <div className="project-card__banner" style={{ background: p.bg }}>
                 <div className="project-card__banner-glow" style={{ background: p.color }} />
                 <span className="project-card__banner-icon" style={{ color: p.color }}>{p.icon}</span>
                 <div className="project-card__banner-dots">
@@ -148,6 +193,7 @@ export default function Projects() {
                     <span key={t} className="tag" style={{ '--tc': p.color }}>{t}</span>
                   ))}
                 </div>
+              </div>
               </div>
             </motion.div>
           ))}

@@ -8,6 +8,7 @@ const links = [
   { id: 'about', label: 'Обо мне' },
   { id: 'skills', label: 'Навыки' },
   { id: 'projects', label: 'Проекты' },
+  { id: 'terminal', label: 'Терминал' },
   { id: 'contact', label: 'Контакты' },
 ]
 
