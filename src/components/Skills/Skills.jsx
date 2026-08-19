@@ -7,6 +7,7 @@ import {
   SiNextdotjs, SiTailwindcss,
 } from 'react-icons/si'
 import './Skills.css'
+import RevealText from '../Effects/RevealText'
 
 const tiles = [
   { icon: <FaHtml5 />,       name: 'HTML',       color: '#e34f26', size: 'md' },
@@ -27,7 +28,7 @@ export default function Skills() {
     <section id="skills" className="skills">
       <div className="skills__blob blob" style={{ width: 400, height: 400, background: '#38bdf8', top: '30%', right: '-80px' }} />
       <div className="skills__inner">
-        <h2 className="section-title">Мой <span>стек</span></h2>
+        <RevealText text="Мой стек" accent="стек" />
 
         <div className="skills__bento">
           {tiles.map((t, i) => (

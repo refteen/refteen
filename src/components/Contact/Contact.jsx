@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { FaTelegram, FaGithub, FaVk } from 'react-icons/fa'
 import './Contact.css'
+import RevealText from '../Effects/RevealText'
 
 const contacts = [
   {
@@ -31,7 +32,7 @@ export default function Contact() {
     <section id="contact" className="contact">
       <div className="contact__blob blob" style={{ width: 380, height: 380, background: '#38bdf8', top: '-60px', left: '-80px' }} />
       <div className="contact__inner">
-        <h2 className="section-title">Давайте <span>поговорим</span></h2>
+        <RevealText text="Давайте поговорим" accent="поговорим" />
 
         <motion.div
           className="contact__card-grid"

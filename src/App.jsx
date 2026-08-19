@@ -10,12 +10,18 @@ import Footer from './components/Footer/Footer'
 import MusicPlayer from './components/MusicPlayer/MusicPlayer'
 import CustomCursor from './components/Effects/CustomCursor'
 import ScrollProgress from './components/Effects/ScrollProgress'
+import SmoothScroll from './components/Effects/SmoothScroll'
+import AuroraBackground from './components/Effects/AuroraBackground'
+import ParticleField from './components/Effects/ParticleField'
 import Preloader from './components/Preloader/Preloader'
 
 function App() {
   return (
     <div>
+      <AuroraBackground />
+      <ParticleField />
       <Preloader />
+      <SmoothScroll />
       <CustomCursor />
       <ScrollProgress />
       <Navbar />

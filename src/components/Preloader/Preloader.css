@@ -1,0 +1,60 @@
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+}
+
+.preloader__logo {
+  font-family: 'Raleway', sans-serif;
+  font-size: clamp(2rem, 7vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #fff;
+  text-shadow: 0 0 30px rgba(199, 112, 240, 0.4);
+  animation: plPulse 1.6s ease-in-out infinite;
+}
+
+.pl-bracket {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes plPulse {
+  50% { text-shadow: 0 0 48px rgba(56, 189, 248, 0.6); }
+}
+
+.preloader__bar {
+  width: min(280px, 70vw);
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.preloader__fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 4px;
+  transition: width 0.15s ease-out;
+  box-shadow: 0 0 12px var(--accent);
+}
+
+.preloader__meta {
+  display: flex;
+  justify-content: space-between;
+  width: min(280px, 70vw);
+  font-family: monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.preloader__step { color: var(--text-muted); }
+.preloader__pct { color: var(--accent2); font-weight: 700; }

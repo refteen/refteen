@@ -33,14 +33,10 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: linear-gradient(135deg, #c770f0 0%, #7c3aed 50%, #38bdf8 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3.2rem;
-  font-weight: 900;
-  color: #fff;
-  letter-spacing: 2px;
+  object-fit: cover;
+  display: block;
+  border: 3px solid rgba(199, 112, 240, 0.5);
+  box-shadow: 0 0 40px rgba(199, 112, 240, 0.25);
   position: relative;
   z-index: 1;
 }

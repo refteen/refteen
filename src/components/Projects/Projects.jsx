@@ -1,13 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FaGithub, FaExternalLinkAlt, FaMap, FaServer, FaEnvelope, FaGamepad, FaYoutube, FaCode, FaKeyboard, FaPalette, FaTimes, FaPlay, FaLaptopCode } from 'react-icons/fa'
+import { FaGithub, FaExternalLinkAlt, FaMap, FaServer, FaEnvelope, FaGamepad, FaYoutube, FaCode, FaKeyboard, FaPalette, FaTimes, FaPlay, FaLaptopCode, FaBookOpen, FaRegImage } from 'react-icons/fa'
 import { FaCow } from 'react-icons/fa6'
 import './Projects.css'
+import RevealText from '../Effects/RevealText'
+
+// Папка со скриншотами кейсов: public/cases/<slug>/ → /refteen/cases/<slug>/
+const CASES_URL = '/refteen/cases/'
 
 const projects = [
   {
     title: 'Derevnya Map',
-    desc: 'Платформа для поиска и бронирования загородного жилья в Ставропольском крае. Карта объектов, фильтрация, онлайн-бронирование и личный кабинет.',
+    desc: 'Платформа для поиска и бронирования загородного жилья в Ставропольском крае. Карта с кластеризацией, маршруты, онлайн-бронирование, кабинеты гостя и владельца, подписка на тарифы.',
     tags: ['React', 'JavaScript', 'Tailwind CSS','NextJS', 'TypeScript', 'PostgreSQL'],
     live: 'https://derevnya-map.ru',
     github: 'https://github.com/refteen/DerevnyaMap',
@@ -15,6 +19,75 @@ const projects = [
     color: '#38bdf8',
     bg: 'linear-gradient(135deg, #0c2a3a 0%, #0a1628 100%)',
     app: null,
+    // Подробный кейс — открывается кнопкой «Смотреть кейс» на баннере
+    caseStudy: {
+      slug: 'derevnyamap',
+      tagline: 'Платформа поиска и бронирования загородного жилья в Ставропольском крае',
+      meta: [
+        { k: 'Роль', v: 'Fullstack — от схемы БД до деплоя' },
+        { k: 'Статус', v: 'В продакшене' },
+        { k: 'Модель', v: 'Подписка для владельцев' },
+        { k: 'Домен', v: 'derevnya-map.ru' },
+      ],
+      problem:
+        'Гостевые дома, базы отдыха и отели Ставрополья живут в разрозненных объявлениях: соцсети, доски, сарафанное радио. ' +
+        'У большинства владельцев нет своего сайта, а у туриста нет карты — непонятно, что где расположено, свободно ли и сколько стоит. ' +
+        'Любое бронирование в итоге упирается в переписку в личных сообщениях.',
+      solution: [
+        {
+          title: 'Карта с кластеризацией',
+          desc: 'Объекты на Яндекс.Картах: при отдалении сходятся в кластеры, по клику на метку всплывает карточка с фото, типом жилья, рейтингом, удобствами и ценой — не уходя с карты.',
+        },
+        {
+          title: 'Маршруты',
+          desc: 'Отдельный раздел для планирования поездки по краю сразу по нескольким местам, а не по одному объекту за раз.',
+        },
+        {
+          title: 'Страница объекта',
+          desc: 'Полноэкранное фото, описание, список удобств, галерея, контакты владельца, отзывы с рейтингом, избранное и шаринг.',
+        },
+        {
+          title: 'Бронирование с живым расчётом',
+          desc: 'Даты заезда и выезда, число гостей, телефон и пожелания. Примерная стоимость пересчитывается на лету — до отправки заявки видно сумму.',
+        },
+        {
+          title: 'Две роли на одном аккаунте',
+          desc: 'Гость собирает избранное и пишет отзывы, владелец объекта управляет своими размещениями. Интерфейс кабинета зависит от роли.',
+        },
+        {
+          title: 'Тарифы и подписка',
+          desc: 'Монетизация вшита в продукт: тариф с месячной ценой, дата подключения, срок действия и остаток дней, смена тарифа прямо из кабинета.',
+        },
+        {
+          title: 'Личный кабинет',
+          desc: 'Мои объекты, избранное, мои отзывы, уведомления и настройки — пять разделов под одной навигацией.',
+        },
+        {
+          title: 'Тёмная и светлая тема',
+          desc: 'Переключатель в шапке: весь интерфейс, включая карту и карточки, продуман в двух палитрах.',
+        },
+        {
+          title: 'Собственный REST API',
+          desc: 'Бэкенд вынесен в отдельный сервис и репозиторий: авторизация, объекты, бронирования, загрузка изображений. Фронтенд и API развиваются независимо.',
+        },
+      ],
+      stack: [
+        { group: 'Frontend', items: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS', 'Яндекс.Карты API'] },
+        { group: 'Backend', items: ['Node.js', 'TypeScript', 'REST API'] },
+        { group: 'База данных', items: ['PostgreSQL'] },
+      ],
+      shots: [
+        { file: 'map.jpg', caption: 'Карта мест: кластеры и карточка объекта прямо на карте' },
+        { file: 'listing.jpg', caption: 'Страница объекта: фото, рейтинг, цена за сутки' },
+        { file: 'booking.jpg', caption: 'Бронирование: даты, гости, живой расчёт стоимости' },
+        { file: 'account.jpg', caption: 'Кабинет владельца: тариф, объекты, избранное, отзывы' },
+      ],
+      links: [
+        { label: 'Открыть derevnya-map.ru', href: 'https://derevnya-map.ru', icon: <FaExternalLinkAlt />, primary: true },
+        { label: 'Frontend', href: 'https://github.com/refteen/DerevnyaMap', icon: <FaGithub /> },
+        { label: 'Backend', href: 'https://github.com/refteen/derevnyamap-backend', icon: <FaGithub /> },
+      ],
+    },
   },
   {
     title: 'DerevnyaMap Backend',
@@ -117,8 +190,133 @@ const projects = [
   },
 ]
 
+// Скриншот кейса. Пока файла нет — на его месте слот с подсказкой, куда его положить.
+function Shot({ src, path, caption, color }) {
+  const [failed, setFailed] = useState(false)
+
+  if (failed) {
+    return (
+      <figure className="case-shot case-shot--empty" style={{ '--sc': color }}>
+        <div className="case-shot__ph">
+          <FaRegImage />
+          <p className="case-shot__ph-caption">{caption}</p>
+          <code className="case-shot__ph-path">{path}</code>
+        </div>
+      </figure>
+    )
+  }
+
+  return (
+    <figure className="case-shot">
+      <img src={src} alt={caption} loading="lazy" onError={() => setFailed(true)} />
+      <figcaption>{caption}</figcaption>
+    </figure>
+  )
+}
+
+function CaseBody({ project }) {
+  const c = project.caseStudy
+  const color = project.color
+
+  return (
+    <div className="case">
+      <header className="case__head">
+        <h3 className="case__title">{project.title}</h3>
+        <p className="case__tagline">{c.tagline}</p>
+
+        <div className="case__links">
+          {c.links.map(l => (
+            <a
+              key={l.href}
+              href={l.href}
+              target="_blank"
+              rel="noreferrer"
+              className={l.primary ? 'case__link case__link--primary' : 'case__link'}
+              style={{ '--lc': color }}
+            >
+              {l.icon} {l.label}
+            </a>
+          ))}
+        </div>
+      </header>
+
+      <div className="case__meta">
+        {c.meta.map(m => (
+          <div key={m.k} className="case__meta-item">
+            <span className="case__meta-k">{m.k}</span>
+            <span className="case__meta-v">{m.v}</span>
+          </div>
+        ))}
+      </div>
+
+      <section className="case__block">
+        <h4 className="case__h" style={{ '--hc': color }}>Задача</h4>
+        <p className="case__text">{c.problem}</p>
+      </section>
+
+      <section className="case__block">
+        <h4 className="case__h" style={{ '--hc': color }}>Что построил</h4>
+        <div className="case__solution">
+          {c.solution.map(s => (
+            <div key={s.title} className="case__item">
+              <span className="case__item-mark" style={{ background: color }} />
+              <div>
+                <p className="case__item-title">{s.title}</p>
+                <p className="case__item-desc">{s.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="case__block">
+        <h4 className="case__h" style={{ '--hc': color }}>Стек</h4>
+        <div className="case__stack">
+          {c.stack.map(g => (
+            <div key={g.group} className="case__stack-row">
+              <span className="case__stack-group">{g.group}</span>
+              <div className="case__stack-tags">
+                {g.items.map(t => (
+                  <span key={t} className="tag" style={{ '--tc': color }}>{t}</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="case__block">
+        <h4 className="case__h" style={{ '--hc': color }}>Как это выглядит</h4>
+        <div className="case__shots">
+          {c.shots.map(s => (
+            <Shot
+              key={s.file}
+              src={CASES_URL + c.slug + '/' + s.file}
+              path={`public/cases/${c.slug}/${s.file}`}
+              caption={s.caption}
+              color={color}
+            />
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
+
 export default function Projects() {
   const [modal, setModal] = useState(null)
+
+  // Esc закрывает модалку, инерционный скролл страницы под ней замирает
+  useEffect(() => {
+    if (!modal) return
+    const onEsc = e => { if (e.key === 'Escape') setModal(null) }
+    window.addEventListener('keydown', onEsc)
+    window.__lenis?.stop()
+    return () => {
+      window.removeEventListener('keydown', onEsc)
+      window.__lenis?.start()
+    }
+  }, [modal])
 
   const handleTilt = e => {
     const card = e.currentTarget
@@ -143,7 +341,7 @@ export default function Projects() {
       <div className="projects__blob blob" style={{ width: 400, height: 400, background: '#c770f0', bottom: 0, right: '-80px' }} />
 
       <div className="projects__inner">
-        <h2 className="section-title">Мои <span>проекты</span></h2>
+        <RevealText text="Мои проекты" accent="проекты" />
 
         <div className="projects__grid">
           {projects.map((p, i) => (
@@ -171,6 +369,11 @@ export default function Projects() {
                 {p.app && (
                   <button className="banner-play-btn" onClick={() => setModal(p)} style={{ '--pc': p.color }}>
                     <FaPlay /> Запустить
+                  </button>
+                )}
+                {p.caseStudy && (
+                  <button className="banner-play-btn" onClick={() => setModal(p)} style={{ '--pc': p.color }}>
+                    <FaBookOpen /> Смотреть кейс
                   </button>
                 )}
               </div>
@@ -210,7 +413,7 @@ export default function Projects() {
             onClick={() => setModal(null)}
           >
             <motion.div
-              className="app-modal__window"
+              className={modal.caseStudy ? 'app-modal__window app-modal__window--case' : 'app-modal__window'}
               initial={{ scale: 0.92, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.92, opacity: 0, y: 20 }}
@@ -221,18 +424,28 @@ export default function Projects() {
                 <span className="dot red" />
                 <span className="dot yellow" />
                 <span className="dot green" />
-                <span className="app-modal__title">{modal.title}</span>
+                <span className="app-modal__title">
+                  {modal.caseStudy ? `${modal.title} — кейс` : modal.title}
+                </span>
                 <button className="app-modal__close" onClick={() => setModal(null)}>
                   <FaTimes />
                 </button>
               </div>
-              <iframe
-                key={modal.app}
-                src={modal.app}
-                title={modal.title}
-                className="app-modal__frame"
-                sandbox="allow-scripts allow-same-origin allow-forms"
-              />
+
+              {modal.caseStudy ? (
+                // data-lenis-prevent — иначе остановленный Lenis глотает колесо мыши
+                <div className="app-modal__scroll" data-lenis-prevent>
+                  <CaseBody project={modal} />
+                </div>
+              ) : (
+                <iframe
+                  key={modal.app}
+                  src={modal.app}
+                  title={modal.title}
+                  className="app-modal__frame"
+                  sandbox="allow-scripts allow-same-origin allow-forms"
+                />
+              )}
             </motion.div>
           </motion.div>
         )}

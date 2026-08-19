@@ -1,0 +1,62 @@
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  mix-blend-mode: screen;
+  opacity: 0.45;
+}
+
+.aurora__layer {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  will-change: transform;
+}
+
+.aurora__layer--1 {
+  width: 55vw;
+  height: 55vw;
+  left: -10vw;
+  top: -5vw;
+  background: radial-gradient(circle, rgba(199, 112, 240, 0.5), transparent 65%);
+  animation: aurora1 26s ease-in-out infinite alternate;
+}
+
+.aurora__layer--2 {
+  width: 50vw;
+  height: 50vw;
+  right: -12vw;
+  top: 20vh;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.45), transparent 65%);
+  animation: aurora2 32s ease-in-out infinite alternate;
+}
+
+.aurora__layer--3 {
+  width: 48vw;
+  height: 48vw;
+  left: 25vw;
+  bottom: -10vw;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.4), transparent 65%);
+  animation: aurora3 29s ease-in-out infinite alternate;
+}
+
+@keyframes aurora1 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(12vw, 14vh) scale(1.15); }
+}
+
+@keyframes aurora2 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-14vw, 10vh) scale(1.1); }
+}
+
+@keyframes aurora3 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(10vw, -12vh) scale(1.2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora__layer { animation: none; }
+}

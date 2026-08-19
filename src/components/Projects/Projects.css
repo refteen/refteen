@@ -24,6 +24,9 @@
   transform-style: preserve-3d;
   transition: transform 0.25s ease-out;
   will-change: transform;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .project-card__glare {
@@ -42,6 +45,8 @@
   overflow: hidden;
   transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
   cursor: default;
+  display: flex;
+  flex-direction: column;
 }
 
 .project-card:hover {
@@ -102,6 +107,7 @@
 /* Body */
 .project-card__body {
   padding: 22px 24px 24px;
+  flex: 1;
 }
 
 .project-card__top {
@@ -255,3 +261,270 @@
   .app-modal__window { height: 90vh; border-radius: 14px; }
 }
 
+
+/* ── Кейс проекта в модалке ────────────────────────────────────────────── */
+.app-modal__window--case {
+  max-width: 1080px;
+}
+
+.app-modal__scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.case {
+  padding: 34px 40px 48px;
+}
+
+.case__head {
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  padding-bottom: 26px;
+}
+
+.case__title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.case__tagline {
+  margin-top: 8px;
+  font-size: 1rem;
+  color: #94a3b8;
+  max-width: 62ch;
+  line-height: 1.55;
+}
+
+.case__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.case__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 50px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #94a3b8;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  transition: color 0.22s, border-color 0.22s, transform 0.22s;
+}
+
+.case__link:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--lc, #38bdf8) 45%, transparent);
+  transform: translateY(-2px);
+}
+
+.case__link--primary {
+  color: var(--lc, #38bdf8);
+  background: color-mix(in srgb, var(--lc, #38bdf8) 12%, transparent);
+  border-color: color-mix(in srgb, var(--lc, #38bdf8) 38%, transparent);
+}
+
+.case__link--primary:hover {
+  color: #000;
+  background: var(--lc, #38bdf8);
+  border-color: var(--lc, #38bdf8);
+}
+
+/* полоска «Роль · Статус · Домен» */
+.case__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1px;
+  margin-top: 26px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.case__meta-item {
+  background: #0d0d24;
+  padding: 15px 18px;
+}
+
+.case__meta-k {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.case__meta-v {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.case__block {
+  margin-top: 38px;
+}
+
+.case__h {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--hc, #38bdf8);
+  margin-bottom: 16px;
+}
+
+.case__h::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--hc, #38bdf8) 35%, transparent), transparent);
+}
+
+.case__text {
+  font-size: 0.97rem;
+  line-height: 1.75;
+  color: #94a3b8;
+  max-width: 76ch;
+}
+
+/* «Что построил» */
+.case__solution {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px 30px;
+}
+
+.case__item {
+  display: flex;
+  gap: 13px;
+}
+
+.case__item-mark {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-top: 7px;
+}
+
+.case__item-title {
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.case__item-desc {
+  margin-top: 5px;
+  font-size: 0.87rem;
+  line-height: 1.65;
+  color: #64748b;
+}
+
+/* Стек */
+.case__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.case__stack-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.case__stack-group {
+  min-width: 118px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.case__stack-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+/* Скриншоты */
+.case__shots {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.case-shot img {
+  display: block;
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.09);
+  background: #080818;
+}
+
+.case-shot figcaption {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: #475569;
+  text-align: center;
+}
+
+/* слот под скриншот, которого ещё нет */
+.case-shot__ph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 210px;
+  padding: 30px 20px;
+  border: 1px dashed color-mix(in srgb, var(--sc, #38bdf8) 30%, rgba(255,255,255,0.12));
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+}
+
+.case-shot__ph > svg {
+  font-size: 1.7rem;
+  color: color-mix(in srgb, var(--sc, #38bdf8) 55%, transparent);
+}
+
+.case-shot__ph-caption {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #64748b;
+  text-align: center;
+}
+
+.case-shot__ph-path {
+  font-family: 'Consolas', ui-monospace, monospace;
+  font-size: 0.74rem;
+  color: #475569;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px;
+  padding: 4px 10px;
+}
+
+@media (max-width: 700px) {
+  .case { padding: 26px 22px 38px; }
+  .case__title { font-size: 1.45rem; }
+  .case__tagline { font-size: 0.92rem; }
+  .case__block { margin-top: 30px; }
+  .case__solution { grid-template-columns: 1fr; }
+  .case__stack-row { flex-direction: column; align-items: flex-start; gap: 7px; }
+}

@@ -13,7 +13,17 @@
       "Bash(gh auth *)",
       "Bash(curl --version)",
       "Bash(powershell *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(mkdir -p /tmp/fonts)",
+      "Read(//tmp/fonts/**)",
+      "Bash(python -c ' *)",
+      "Bash(python scripts/generate-og.py)",
+      "Bash(awk '/data-lenis-prevent.\\\\\\)/{found=NR} found && NR>=found && NR<=found+14' node_modules/lenis/dist/lenis.mjs)",
+      "Bash(timeout 60 git ls-remote --heads origin)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(git fetch *)",
+      "Bash(git ls-tree *)",
+      "Bash(git add *)"
     ]
   }
 }

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { FaMapMarkerAlt, FaCode, FaRocket, FaGraduationCap } from 'react-icons/fa'
+import RevealText from '../Effects/RevealText'
 import './About.css'
 
 const facts = [
@@ -23,7 +24,12 @@ export default function About() {
           transition={{ duration: 0.7 }}
         >
           <div className="about__avatar-wrap">
-            <div className="about__avatar">refteen</div>
+            <img
+              className="about__avatar"
+              src="https://github.com/refteen.png?size=400"
+              alt="refteen"
+              loading="lazy"
+            />
             <div className="about__avatar-ring" />
           </div>
 
@@ -47,9 +53,7 @@ export default function About() {
           viewport={{ once: true }}
           transition={{ duration: 0.7, delay: 0.15 }}
         >
-          <h2 className="section-title" style={{ textAlign: 'left', marginBottom: 28 }}>
-            Обо <span>мне</span>
-          </h2>
+          <RevealText className="reveal-title--left" text="Обо мне" accent="мне" style={{ textAlign: 'left', marginBottom: 28 }} />
 
           <p className="about__text">
             Меня зовут <strong>Вячеслав</strong> — Full Stack разработчик с фокусом на создание
