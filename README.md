@@ -46,6 +46,7 @@
 ### 📌 Мои проекты
 
 - 🏡 **[DerevnyaMap](https://github.com/refteen/DerevnyaMap)** — платформа бронирования загородного жилья (React, Next.js, PostgreSQL)
+- 📡 **[TG MTProto Proxy Parser](https://github.com/refteen/telegram-mtproto-proxy-parser)** — парсер и тестер Telegram-прокси: проверяет каждый настоящим MTProto-хендшейком (Python, asyncio, tkinter)
 - 🐄 **[AnimalFeedPlanner](https://github.com/refteen/AnimalFeedPlanner)** — десктопное Java-приложение для расчёта рационов животных (курсовой проект)
 - 📧 **[1sec Email Bot](https://github.com/refteen/1secEmail-Telegram-BOT)** — Telegram-бот для временной почты
 - 🎮 **[Snake](https://github.com/refteen/snake-game)** · **[Memory Game](https://github.com/refteen/memory-game)** · **[Gradient Generator](https://github.com/refteen/css-gradient-generator)** — мини-приложения

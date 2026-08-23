@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FaGithub, FaExternalLinkAlt, FaMap, FaServer, FaEnvelope, FaGamepad, FaYoutube, FaCode, FaKeyboard, FaPalette, FaTimes, FaPlay, FaLaptopCode, FaBookOpen, FaRegImage } from 'react-icons/fa'
+import { FaGithub, FaExternalLinkAlt, FaMap, FaServer, FaEnvelope, FaGamepad, FaYoutube, FaCode, FaKeyboard, FaPalette, FaTimes, FaPlay, FaLaptopCode, FaBookOpen, FaRegImage, FaTelegramPlane } from 'react-icons/fa'
 import { FaCow } from 'react-icons/fa6'
 import './Projects.css'
 import RevealText from '../Effects/RevealText'
@@ -109,6 +109,17 @@ const projects = [
     icon: <FaCow />,
     color: '#f59e0b',
     bg: 'linear-gradient(135deg, #2a1a05 0%, #140c02 100%)',
+    app: null,
+  },
+  {
+    title: 'TG MTProto Proxy Parser',
+    desc: 'Десктопный парсер MTProto-прокси из публичных Telegram-каналов. Проверяет каждый прокси настоящим MTProto-хендшейком, а не пингом: в список попадают только живые — с задержкой и страной. Подключение в Telegram одним кликом.',
+    tags: ['Python', 'asyncio', 'tkinter', 'MTProto', 'PyInstaller'],
+    live: null,
+    github: 'https://github.com/refteen/telegram-mtproto-proxy-parser',
+    icon: <FaTelegramPlane />,
+    color: '#2aabee',
+    bg: 'linear-gradient(135deg, #062b40 0%, #03131f 100%)',
     app: null,
   },
   {
