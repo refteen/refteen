@@ -106,16 +106,16 @@ const BELL_SCALE = [587.33, 659.26, 739.99, 880.0, 987.77, 1174.66, 1318.51]  //
 // — Разовые звуки —
 const KNOCK_GAIN = 0.3
 const GLASS_RING = 10          // компенсация узких полос «звона» стекла
-const BUBBLE_GAIN = 0.012
+const BUBBLE_GAIN = 0.036
 const BUBBLE_RATE = 10         // не чаще, в секунду (лишние отбрасываются)
-const PLIP_GAIN = 0.006
+const PLIP_GAIN = 0.018
 const PLIP_RATE = 14
 const FISH_GAIN = 0.06
 const SPLASH_GAIN = 0.1
 const SPLASH_RATE = 6
 const FEED_GAIN = 0.12
 const CLICK_GAIN = 0.06
-const RELAY_GAIN = 0.05
+const RELAY_GAIN = 0.15
 const LAMP_SWELL_GAIN = 0.008
 const FREEZE_GAIN = 0.022
 const REVIVE_GAIN = 0.022
@@ -128,12 +128,12 @@ const GLASS_PARTIALS = [[1, 1, 1], [1.0012, 0.45, 0.9], [2.756, 0.22, 0.32], [5.
 
 // — Сборка инсталляции (buildStep) —
 const PLINTH_GAIN = 0.22
-const PANE_GAIN = 0.03
+const PANE_GAIN = 0.1
 const PANE_NOTES = [1174.66, 1318.51, 1479.98, 1760.0, 2349.32]  // D6 E6 F#6 A6 D7 — восходящая фигура
 const SAND_GAIN = 0.08
 const ROCK_GAIN = 0.12
 const PLANT_GAIN = 0.12
-const LAMP_CREAK_GAIN = 0.3
+const LAMP_CREAK_GAIN = 0.9
 
 // ————————————————————————————————————————————————————————————————
 // Служебное
