@@ -14,7 +14,8 @@
 
 .projects__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  /* min() — чтобы на узких экранах (360px) карточка не вылезала за край */
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
   gap: 24px;
   perspective: 1200px;
 }
@@ -104,6 +105,43 @@
   place-self: center;
 }
 
+/* Постер-обложка: проявляется поверх иконки, когда картинка загрузилась */
+.project-card__poster {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.project-card__banner--poster .project-card__poster { opacity: 1; }
+
+.project-card__poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.01);
+  transition: transform 2.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.project-card:hover .project-card__poster img { transform: scale(1.07); }
+
+/* затемнение снизу — чтобы кнопки читались на любом кадре */
+.project-card__poster::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(2, 8, 12, 0.85) 0%, rgba(2, 8, 12, 0.3) 42%, transparent 72%);
+}
+
+/* точки поверх постера — едва заметные */
+.project-card__banner--poster .project-card__banner-dots {
+  z-index: 1;
+  opacity: 0.35;
+}
+
 /* Body */
 .project-card__body {
   padding: 22px 24px 24px;
@@ -159,11 +197,21 @@
   font-weight: 700;
 }
 
+/* Кнопки на баннере: одна или две рядом, в правом нижнем углу */
+.banner-actions {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 /* Play button on banner */
 .banner-play-btn {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -177,8 +225,8 @@
   cursor: pointer;
   backdrop-filter: blur(8px);
   transition: all 0.25s;
-  z-index: 2;
   font-family: 'Raleway', sans-serif;
+  white-space: nowrap;
 }
 
 .banner-play-btn:hover {
@@ -211,6 +259,14 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+  /* плавно меняет размер, когда кейс переключается на само приложение */
+  transition: max-width 0.45s cubic-bezier(0.22, 1, 0.36, 1), height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Большое окно для полноценных приложений (3D-аквариум) */
+.app-modal__window--wide {
+  max-width: 1480px;
+  height: 90vh;
 }
 
 .app-modal__bar {
@@ -223,12 +279,69 @@
   flex-shrink: 0;
 }
 
+.app-modal__bar .dot { flex-shrink: 0; }
+
 .app-modal__title {
   flex: 1;
+  min-width: 0;
   margin-left: 10px;
   font-size: 0.82rem;
   font-weight: 700;
   color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Кнопки в шапке окна: «Запустить» из кейса, «Кейс» из приложения */
+.app-modal__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 50px;
+  border: 1px solid color-mix(in srgb, var(--mc, #c770f0) 45%, transparent);
+  background: color-mix(in srgb, var(--mc, #c770f0) 12%, transparent);
+  color: var(--mc, #c770f0);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.app-modal__action:hover {
+  background: var(--mc, #c770f0);
+  color: #000;
+}
+
+.app-modal__action--ghost {
+  border-color: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #94a3b8;
+}
+
+.app-modal__action--ghost:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--text);
+}
+
+/* ссылка «на весь экран ↗» */
+.app-modal__full {
+  flex-shrink: 0;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.app-modal__full:hover {
+  color: var(--mc, #c770f0);
+  background: rgba(255,255,255,0.06);
 }
 
 .app-modal__close {
@@ -259,6 +372,22 @@
 @media (max-width: 600px) {
   .app-modal { padding: 12px; }
   .app-modal__window { height: 90vh; border-radius: 14px; }
+}
+
+/* На телефоне (и в альбомной ориентации) большое окно — почти во весь экран */
+@media (max-width: 600px), (max-height: 500px) {
+  .app-modal--wide { padding: 6px; }
+  .app-modal__window--wide {
+    height: calc(100vh - 12px);
+    height: calc(100dvh - 12px);
+    border-radius: 12px;
+  }
+  .app-modal--wide .app-modal__bar { padding: 8px 12px; }
+}
+
+@media (max-width: 600px) {
+  .app-modal--wide .app-modal__bar .dot { display: none; }
+  .app-modal--wide .app-modal__title { margin-left: 0; }
 }
 
 
@@ -316,6 +445,10 @@
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.09);
   transition: color 0.22s, border-color 0.22s, transform 0.22s;
+  /* бывает и ссылкой, и кнопкой (action: 'app') — выглядят одинаково */
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .case__link:hover {

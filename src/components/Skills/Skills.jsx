@@ -4,8 +4,10 @@ import {
 } from 'react-icons/fa'
 import {
   SiJavascript, SiTypescript, SiPostgresql,
-  SiNextdotjs, SiTailwindcss,
+  SiNextdotjs, SiTailwindcss, SiThreedotjs,
 } from 'react-icons/si'
+// логотип WebGL — вордмарк, в маленькой плитке не читается; каркасный куб понятнее
+import { PiCubeTransparentBold } from 'react-icons/pi'
 import './Skills.css'
 import RevealText from '../Effects/RevealText'
 
@@ -19,6 +21,8 @@ const tiles = [
   { icon: <SiNextdotjs />,   name: 'Next.js',    color: '#fff',    size: 'md' },
   { icon: <SiPostgresql />,  name: 'PostgreSQL', color: '#336791', size: 'md' },
   { icon: <SiTailwindcss />, name: 'Tailwind',   color: '#38bdf8', size: 'sm' },
+  { icon: <SiThreedotjs />,  name: 'Three.js',   color: '#fff',    size: 'sm' },
+  { icon: <PiCubeTransparentBold />, name: 'WebGL · GLSL', color: '#5eead4', size: 'sm' },
   { icon: <FaPython />,      name: 'Python',     color: '#ffd43b', size: 'sm' },
   { icon: <FaGitAlt />,      name: 'Git',        color: '#f05032', size: 'sm' },
 ]

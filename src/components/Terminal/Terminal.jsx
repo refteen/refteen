@@ -10,9 +10,9 @@ const BOOT = [
   'Система готова. Введи help и жми Enter.',
 ]
 
-const HINTS = ['help', 'about', 'projects', 'hire', 'github', 'theme', 'matrix', 'clear']
+const HINTS = ['help', 'about', 'projects', 'aquarium', 'hire', 'github', 'theme', 'matrix', 'clear']
 
-const ALL_CMDS = ['help', 'about', 'whoami', 'skills', 'projects', 'contact', 'social', 'hire', 'neofetch', 'github', 'theme', 'matrix', 'ls', 'dota', 'clear', 'exit']
+const ALL_CMDS = ['help', 'about', 'whoami', 'skills', 'projects', 'aquarium', 'contact', 'social', 'hire', 'neofetch', 'github', 'theme', 'matrix', 'ls', 'dota', 'clear', 'exit']
 
 const PROMPT = 'refteen@portfolio:~$'
 
@@ -157,6 +157,17 @@ export default function Terminal() {
       return
     }
 
+    if (cmd.split(' ')[0] === 'aquarium') {
+      push(raw, <p>🐟 Запускаю <span className="t-accent">Natura viva</span> — живой 3D-аквариум...</p>)
+      // модалку открывает раздел «Проекты»: он сам доскроллит к себе и включит инсталляцию;
+      // фокус убираем, чтобы клавиши не печатались в консоль под окном
+      setTimeout(() => {
+        inputRef.current?.blur()
+        window.dispatchEvent(new CustomEvent('portfolio:open', { detail: { title: 'Natura viva', mode: 'app' } }))
+      }, 450)
+      return
+    }
+
     if (cmd === 'github') {
       const id = 'gh-' + Date.now()
       setHistory(h => [...h, { input: raw, id, output: <p className="t-dim">Запрос к api.github.com...</p> }])
@@ -189,6 +200,7 @@ export default function Terminal() {
             <span className="t-key">about</span><span>кто я и чем занимаюсь</span>
             <span className="t-key">skills</span><span>мой технологический стек</span>
             <span className="t-key">projects</span><span>над чем я работал</span>
+            <span className="t-key">aquarium</span><span>🐟 запустить 3D-аквариум</span>
             <span className="t-key">contact</span><span>как со мной связаться</span>
             <span className="t-key">github</span><span>живая статистика профиля</span>
             <span className="t-key">neofetch</span><span>инфо-карточка обо мне</span>
@@ -207,6 +219,7 @@ export default function Terminal() {
           <p>
             <span className="t-accent">Frontend:</span> React, Next.js, TypeScript, Tailwind<br />
             <span className="t-accent">Backend:</span> Node.js, PostgreSQL, REST API<br />
+            <span className="t-accent">3D и графика:</span> Three.js, WebGL, GLSL, Web Audio<br />
             <span className="t-accent">Инструменты:</span> Git, Python, Canvas API
           </p>
         )
@@ -214,6 +227,7 @@ export default function Terminal() {
         return (
           <p>
             <span className="t-accent">→</span> <a href="https://derevnya-map.ru" target="_blank" rel="noreferrer" className="t-link">derevnya-map.ru</a> — платформа бронирования жилья<br />
+            <span className="t-accent">→</span> Natura viva — живой 3D-аквариум на WebGL, запуск: <span className="t-key">aquarium</span><br />
             <span className="t-accent">→</span> Snake · Memory · Gradient Generator — мини-приложения<br />
             <span className="t-accent">→</span> Telegram-боты на Python<br />
             <span className="t-dim">Прокрути вверх к разделу «Проекты», чтобы запустить их прямо здесь.</span>

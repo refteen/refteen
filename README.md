@@ -13,6 +13,7 @@
 
 - 🚀 Пишу и фронтенд, и бэкенд — беру проект целиком: архитектура, API, интерфейс, деплой
 - 🌐 Мой боевой проект — [derevnya-map.ru](https://derevnya-map.ru): платформа для поиска и бронирования загородного жилья
+- 🐟 Кроме веба, делаю 3D в реальном времени: Three.js, WebGL и шейдеры на GLSL — например, [живой аквариум](https://github.com/refteen/aquarium) прямо в браузере
 - 🎓 Учусь по направлению **«Информационные системы и технологии в бизнесе»**
 - 💬 Люблю нетривиальные задачи, чистый код и продуманный UX
 - 📩 Открыт для новых проектов — пиши в [Telegram](https://t.me/ewiwt)
@@ -27,6 +28,9 @@
   <img src="https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white" />
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat&logo=tailwindcss&logoColor=white" />
+  <img src="https://img.shields.io/badge/Three.js-000000?style=flat&logo=threedotjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/WebGL-990000?style=flat&logo=webgl&logoColor=white" />
+  <img src="https://img.shields.io/badge/GLSL-5586A4?style=flat&logo=opengl&logoColor=white" />
   <img src="https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white" />
   <img src="https://img.shields.io/badge/Java-ED8B00?style=flat&logo=openjdk&logoColor=white" />
   <img src="https://img.shields.io/badge/Git-F05032?style=flat&logo=git&logoColor=white" />
@@ -46,6 +50,7 @@
 ### 📌 Мои проекты
 
 - 🏡 **[DerevnyaMap](https://github.com/refteen/DerevnyaMap)** — платформа бронирования загородного жилья (React, Next.js, PostgreSQL)
+- 🐟 **[Natura viva](https://github.com/refteen/aquarium)** — интерактивная 3D-инсталляция: живой аквариум, где стая рыб, вода, каустики и звук считаются в реальном времени (Three.js, GLSL, Web Audio)
 - 📡 **[TG MTProto Proxy Parser](https://github.com/refteen/telegram-mtproto-proxy-parser)** — парсер и тестер Telegram-прокси: проверяет каждый настоящим MTProto-хендшейком (Python, asyncio, tkinter)
 - 🐄 **[AnimalFeedPlanner](https://github.com/refteen/AnimalFeedPlanner)** — десктопное Java-приложение для расчёта рационов животных (курсовой проект)
 - 📧 **[1sec Email Bot](https://github.com/refteen/1secEmail-Telegram-BOT)** — Telegram-бот для временной почты
