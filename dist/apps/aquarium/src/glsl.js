@@ -96,6 +96,53 @@ vec3 voronoi(vec2 p) {
 float ign(vec2 p) { return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715)))); }
 `
 
+// Градиентный шум (как у Перлина) со случайными единичными градиентами:
+// гладкий, без «кубиков» value-шума. gnoised3 возвращает (значение, градиент).
+export const GNOISE = /* glsl */ `
+vec3 ghash(ivec3 i) {
+  uvec3 q = uvec3(i + 65536);
+  uint h = pcg(q.x + pcg(q.y + pcg(q.z)));
+  uint h2 = pcg(h ^ 0x68E31DA4u);
+  float a = float(h & 0xFFFFu) * (6.2831853 / 65535.0);
+  float z = float(h2 & 0xFFFFu) * (2.0 / 65535.0) - 1.0;
+  float r = sqrt(max(1.0 - z * z, 0.0));
+  return vec3(r * cos(a), z, r * sin(a));
+}
+vec4 gnoised3(vec3 x) {
+  ivec3 i = ivec3(floor(x));
+  vec3 f = fract(x);
+  vec3 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  vec3 du = 30.0 * f * f * (f * (f - 2.0) + 1.0);
+  vec3 ga = ghash(i), gb = ghash(i + ivec3(1, 0, 0)), gc = ghash(i + ivec3(0, 1, 0)), gd = ghash(i + ivec3(1, 1, 0));
+  vec3 ge = ghash(i + ivec3(0, 0, 1)), gf = ghash(i + ivec3(1, 0, 1)), gg = ghash(i + ivec3(0, 1, 1)), gh = ghash(i + ivec3(1, 1, 1));
+  float va = dot(ga, f), vb = dot(gb, f - vec3(1, 0, 0)), vc = dot(gc, f - vec3(0, 1, 0)), vd = dot(gd, f - vec3(1, 1, 0));
+  float ve = dot(ge, f - vec3(0, 0, 1)), vf = dot(gf, f - vec3(1, 0, 1)), vg = dot(gg, f - vec3(0, 1, 1)), vh = dot(gh, f - vec3(1, 1, 1));
+  float k1 = vb - va, k2 = vc - va, k3 = ve - va;
+  float k4 = va - vb - vc + vd, k5 = va - vc - ve + vg, k6 = va - vb - ve + vf;
+  float k7 = -va + vb + vc - vd + ve - vf - vg + vh;
+  float v = va + u.x * k1 + u.y * k2 + u.z * k3 + u.x * u.y * k4 + u.y * u.z * k5 + u.z * u.x * k6 + u.x * u.y * u.z * k7;
+  vec3 d = ga + u.x * (gb - ga) + u.y * (gc - ga) + u.z * (ge - ga)
+         + u.x * u.y * (ga - gb - gc + gd) + u.y * u.z * (ga - gc - ge + gg) + u.z * u.x * (ga - gb - ge + gf)
+         + u.x * u.y * u.z * (-ga + gb + gc - gd + ge - gf - gg + gh)
+         + du * (vec3(k1, k2, k3) + u.yzx * vec3(k4, k5, k6) + u.zxy * vec3(k6, k4, k5) + u.yzx * u.zxy * k7);
+  return vec4(v, d);
+}
+float gnoise3(vec3 x) {
+  ivec3 i = ivec3(floor(x));
+  vec3 f = fract(x);
+  vec3 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  float va = dot(ghash(i), f);
+  float vb = dot(ghash(i + ivec3(1, 0, 0)), f - vec3(1, 0, 0));
+  float vc = dot(ghash(i + ivec3(0, 1, 0)), f - vec3(0, 1, 0));
+  float vd = dot(ghash(i + ivec3(1, 1, 0)), f - vec3(1, 1, 0));
+  float ve = dot(ghash(i + ivec3(0, 0, 1)), f - vec3(0, 0, 1));
+  float vf = dot(ghash(i + ivec3(1, 0, 1)), f - vec3(1, 0, 1));
+  float vg = dot(ghash(i + ivec3(0, 1, 1)), f - vec3(0, 1, 1));
+  float vh = dot(ghash(i + ivec3(1, 1, 1)), f - vec3(1, 1, 1));
+  return mix(mix(mix(va, vb, u.x), mix(vc, vd, u.x), u.y), mix(mix(ve, vf, u.x), mix(vg, vh, u.x), u.y), u.z);
+}
+`
+
 // Вода: поглощение/рассеяние по длине пути в объёме, каустики, тени рыб.
 export const WATER = /* glsl */ `
 vec2 tankUV(vec2 xz) { return (xz - uTankXZ.xy) * uTankXZ.zw; }
@@ -132,13 +179,14 @@ vec3 lampDir(vec3 p) {
   return normalize(c - p);
 }
 
-vec3 causticAt(vec3 p, float depth) {
+vec3 causticAt(vec3 p, float depth, vec3 N) {
   // луч от поверхности почти вертикален — сдвигаем точку к плоскости расчёта
   vec2 xz = p.xz + vec2(0.035, 0.05) * (uCausticPlane - p.y);
   float focus = clamp(depth / max(uWaterY - uCausticPlane, 0.05), 0.0, 1.6);
-  float lod = mix(4.0, 0.6, smoothstep(0.0, 0.9, focus)) + max(focus - 1.0, 0.0) * 2.5;
+  float steep = 1.0 - smoothstep(0.15, 0.85, abs(N.y));
+  float lod = mix(4.0, 0.6, smoothstep(0.0, 0.9, focus)) + max(focus - 1.0, 0.0) * 2.5 + steep * 2.2;
   vec3 c = textureLod(tCaustics, tankUV(xz), lod).rgb;
-  return mix(vec3(1.0), c, smoothstep(0.0, 0.25, focus));
+  return mix(vec3(1.0), c, smoothstep(0.0, 0.25, focus) * (1.0 - steep * 0.6));
 }
 
 float fishShadowAt(vec3 p) {
@@ -154,7 +202,7 @@ vec3 shadeInterior(vec3 p, vec3 V, vec3 albedo, vec3 N, float ao, float spec, fl
   vec3 L = lampDir(p);
   float ndl = max(dot(N, L), 0.0);
   vec3 Tl = mix(vec3(1.0), exp(-uAbsorb * max(depth, 0.0) / max(L.y, 0.35)), sub);
-  vec3 caus = mix(vec3(1.0), causticAt(p, max(depth, 0.0)), sub);
+  vec3 caus = mix(vec3(1.0), causticAt(p, max(depth, 0.0), N), sub);
 #ifdef NO_FISH_SHADOW
   float sh = 1.0;
 #else

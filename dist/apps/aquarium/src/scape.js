@@ -1,7 +1,7 @@
 // Ландшафт: грунт (песок + аквасойл, срез у стекла), камни ивагуми, ковёр ситняга, валлиснерия.
 import THREE from './three.js'
 import { INNER, TANK } from './config.js'
-import { UNIFORMS, NOISE, WATER } from './glsl.js'
+import { UNIFORMS, NOISE, GNOISE, WATER } from './glsl.js'
 import { sandHeight, sandMask, ROCK_SHAPES, rockField } from './terrain.js'
 import { mulberry32, fbm3, ridged3, clamp, smoothstep } from './noise.js'
 
@@ -186,33 +186,38 @@ function icosphere(detail) {
 }
 
 function buildRocks(S, u) {
-  const { verts, faces } = icosphere(5)
+  const spheres = { 5: icosphere(5), 6: icosphere(6) }
   const positions = [], aos = [], ids = [], indices = []
   let offset = 0
   for (const [ri, r] of ROCK_SHAPES.entries()) {
+    // большим камням — плотнее сетка: рёбра и сколы читаются вблизи
+    const { verts, faces } = spheres[r.rx > 0.08 ? 6 : 5]
     const rand = mulberry32(r.seed * 977)
     // выпуклый многогранник из случайных плоскостей → сколы и грани, как у камня
     const planes = []
-    const np = 14 + Math.floor(rand() * 6)
+    const np = 24 + Math.floor(rand() * 10)
     for (let i = 0; i < np; i++) {
       const th = rand() * Math.PI * 2, ph = Math.acos(2 * rand() - 1)
-      planes.push([Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th), 0.78 + rand() * 0.3])
+      planes.push([Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th), 0.8 + rand() * 0.32])
     }
     const seed = r.seed * 1.37
     for (const v of verts) {
       let acc = 0
-      const kSoft = 26
+      const kSoft = 44
       for (const [nx, ny, nz, d] of planes) {
         const dp = v[0] * nx + v[1] * ny + v[2] * nz
         const rr = dp > 0.05 ? d / dp : 3
         acc += Math.exp(-kSoft * rr)
       }
       let rad = Math.min(-Math.log(acc) / kSoft, 1.35)
-      rad *= 1 + (fbm3(v[0] * 1.7 + seed, v[1] * 1.7, v[2] * 1.7 - seed, 3) - 0.5) * 0.22
+      rad *= 1 + (fbm3(v[0] * 1.7 + seed, v[1] * 1.7, v[2] * 1.7 - seed, 3) - 0.5) * 0.1
+      // гребни выветривания и узкие трещины
       const ridge = ridged3(v[0] * 3.4 + seed, v[1] * 5.5, v[2] * 3.4, 4)
-      rad *= 1 - (1 - ridge) * 0.075
+      rad *= 1 - Math.pow(1 - ridge, 2) * 0.09
+      const crack = ridged3(v[0] * 8 - seed, v[1] * 12, v[2] * 8 + seed, 3)
+      rad *= 1 - Math.pow(1 - crack, 4) * 0.05
       // слоистость: горизонтальные бороздки
-      rad *= 1 + Math.sin(v[1] * 26 + fbm3(v[0] * 3, v[1] * 3, v[2] * 3 + seed, 2) * 6) * 0.008
+      rad *= 1 + Math.sin(v[1] * 26 + fbm3(v[0] * 3, v[1] * 3, v[2] * 3 + seed, 2) * 6) * 0.007
       let px = v[0] * rad, py = v[1] * rad, pz = v[2] * rad
       if (py < -0.62) py = -0.62 + (py + 0.62) * 0.12
       px *= r.rx; py *= r.ry; pz *= r.rz
@@ -223,9 +228,9 @@ function buildRocks(S, u) {
       const wz = -r.syw * lx + r.cyw * pz
       positions.push(r.cx + wx, r.cy + ly, r.cz + wz)
       ids.push(ri)
-      aos.push(clamp(0.35 + (rad - 0.8) * 1.4, 0.25, 1) * clamp(0.55 + (v[1] + 0.62) * 0.9, 0.5, 1))
+      aos.push(clamp(0.45 + (rad - 0.8) * 1.2, 0.3, 1) * clamp(0.55 + (v[1] + 0.62) * 0.9, 0.5, 1))
     }
-    for (const [a, b, c] of faces) indices.push(a + offset, b + offset, c + offset)
+    for (const [fa, fb, fc] of faces) indices.push(fa + offset, fb + offset, fc + offset)
     offset += verts.length
   }
   const geo = new THREE.BufferGeometry()
@@ -235,58 +240,90 @@ function buildRocks(S, u) {
   geo.setIndex(indices)
   geo.computeVertexNormals()
 
+  // кривизна поверхности: выпуклые рёбра стираются и светлеют, во впадинах копится тень
+  const pos = geo.attributes.position.array, nrm = geo.attributes.normal.array
+  const n = pos.length / 3
+  const sum = new Float32Array(n * 3), cnt = new Float32Array(n), elen = new Float32Array(n)
+  const link = (x, y) => {
+    sum[x * 3] += pos[y * 3]; sum[x * 3 + 1] += pos[y * 3 + 1]; sum[x * 3 + 2] += pos[y * 3 + 2]
+    cnt[x]++
+    elen[x] += Math.hypot(pos[y * 3] - pos[x * 3], pos[y * 3 + 1] - pos[x * 3 + 1], pos[y * 3 + 2] - pos[x * 3 + 2])
+  }
+  for (let f = 0; f < indices.length; f += 3) {
+    const i0 = indices[f], i1 = indices[f + 1], i2 = indices[f + 2]
+    link(i0, i1); link(i1, i0); link(i1, i2); link(i2, i1); link(i2, i0); link(i0, i2)
+  }
+  const curv = new Float32Array(n)
+  for (let i = 0; i < n; i++) {
+    const k = cnt[i] || 1
+    const lx = sum[i * 3] / k - pos[i * 3], ly = sum[i * 3 + 1] / k - pos[i * 3 + 1], lz = sum[i * 3 + 2] / k - pos[i * 3 + 2]
+    const e = elen[i] / k || 1e-4
+    curv[i] = clamp(-(lx * nrm[i * 3] + ly * nrm[i * 3 + 1] + lz * nrm[i * 3 + 2]) / e * 5, -1, 1)
+  }
+  // одно сглаживание по соседям — без «зерна»
+  const cs = new Float32Array(n), cc = new Float32Array(n)
+  for (let f = 0; f < indices.length; f += 3) {
+    const t = [indices[f], indices[f + 1], indices[f + 2]]
+    for (const x of t) for (const y of t) { cs[x] += curv[y]; cc[x]++ }
+  }
+  for (let i = 0; i < n; i++) curv[i] = cs[i] / (cc[i] || 1)
+  geo.setAttribute('aCurv', new THREE.BufferAttribute(curv, 1))
+
   const material = new THREE.ShaderMaterial({
     uniforms: { ...S, ...u },
     vertexShader: /* glsl */ `
-      attribute float aAO; attribute float aRock;
+      attribute float aAO; attribute float aRock; attribute float aCurv;
       uniform float uRockDrop[${ROCK_SHAPES.length}];
-      varying vec3 vWorld; varying vec3 vN; varying float vAO;
+      varying vec3 vWorld; varying vec3 vN; varying float vAO; varying float vCurv;
       void main() {
         vec3 p = position;
         p.y += uRockDrop[int(aRock + 0.5)];
-        vWorld = p; vN = normal; vAO = aAO;
+        vWorld = p; vN = normal; vAO = aAO; vCurv = aCurv;
         gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
       }`,
     fragmentShader: /* glsl */ `
       ${UNIFORMS}
       ${NOISE}
+      ${GNOISE}
       ${WATER}
       uniform float uAlgae;
-      varying vec3 vWorld; varying vec3 vN; varying float vAO;
-      float rockH(vec3 p) {
-        return vnoise3(p * 90.0) * 0.5 + vnoise3(p * 230.0) * 0.25 + abs(vnoise3(p * 40.0) - 0.5) * 0.6;
-      }
+      varying vec3 vWorld; varying vec3 vN; varying float vAO; varying float vCurv;
       void main() {
         vec3 p = vWorld;
         vec3 V = normalize(cameraPosition - p);
         vec3 N = normalize(vN);
-        float dist = length(cameraPosition - p);
-        float detail = 1.0 - smoothstep(1.0, 3.0, dist);
-        // мелкий рельеф: градиент шума
-        float e = 0.0015;
-        float h0 = rockH(p);
-        vec3 grad = vec3(rockH(p + vec3(e, 0.0, 0.0)) - h0, rockH(p + vec3(0.0, e, 0.0)) - h0, rockH(p + vec3(0.0, 0.0, e)) - h0) / e;
-        grad -= N * dot(grad, N);
-        N = normalize(N - grad * 0.0045 * detail);
-        // сэйрю: сине-серый камень, тонкая фактура, редкие белые прожилки кальцита
-        float m = fbm3(p * 5.0);
-        float m2 = vnoise3(p * 22.0 + 3.0);
-        vec3 albedo = vec3(0.07, 0.075, 0.082) * (0.84 + 0.22 * m + 0.12 * (m2 - 0.5));
-        albedo *= 0.88 + 0.24 * h0;
-        float crev = smoothstep(0.07, 0.0, abs(vnoise3(p * vec3(16.0, 34.0, 16.0)) - 0.5));
-        albedo *= 1.0 - crev * 0.35;
-        float vein = smoothstep(0.022, 0.0, abs(vnoise3(p * vec3(9.0, 26.0, 9.0) + fbm3(p * 4.0) * 1.7) - 0.5));
-        vein *= smoothstep(0.5, 0.72, fbm3(p * 3.0 + 5.0));
-        albedo = mix(albedo, vec3(0.3, 0.3, 0.29), vein * 0.6);
-        albedo *= 1.0 + 0.14 * smoothstep(0.55, 1.0, N.y);
-        float ao = vAO * (0.8 + 0.2 * smoothstep(0.2, 0.7, h0));
-        // мох и водоросли на верхних гранях
-        float moss = smoothstep(0.6, 0.95, N.y) * smoothstep(0.5, 0.78, fbm3(p * 16.0));
-        albedo = mix(albedo, vec3(0.022, 0.05, 0.016), moss * (0.2 + uAlgae * 0.75));
         float above = step(uWaterY, p.y);
         float wet = mix(1.0, uWet, above);
-        albedo *= mix(1.0, 0.72, wet);
-        vec3 col = shadeInterior(p, V, albedo, N, ao, mix(0.05, 0.22, wet), mix(16.0, 50.0, wet), 0.0);
+        // мелкий рельеф только там, где пиксель меньше его масштаба — без мерцания
+        float pxs = length(fwidth(p));
+        float fine = 1.0 - smoothstep(0.0006, 0.0024, pxs);
+        float mid = 1.0 - smoothstep(0.0016, 0.006, pxs);
+        // складки: градиент |шума| даёт острые гребни вместо мягких бугров
+        vec4 n1 = gnoised3(p * 42.0);
+        vec4 n2 = gnoised3(p * 120.0 + 7.3);
+        vec4 n3 = gnoised3(p * 320.0 - 2.1);
+        vec3 grad = sign(n1.x) * n1.yzw * (42.0 * 0.0011) * mid
+                  + sign(n2.x) * n2.yzw * (120.0 * 0.00045) * fine
+                  + n3.yzw * (320.0 * 0.00012) * fine;
+        grad -= N * dot(grad, N);
+        N = normalize(N + grad * mix(1.0, 0.5, wet));
+        // сэйрю-сэки: сине-серый камень; сухой — заметно светлее
+        float g1 = gnoise3(p * 4.5);
+        float g2 = gnoise3(p * 17.0 + 3.1);
+        float grain = gnoise3(p * 420.0) * fine;
+        vec3 albedo = vec3(0.085, 0.092, 0.1) * (1.0 + 0.26 * g1 + 0.12 * g2 - 0.14 * abs(n1.x) + 0.12 * grain);
+        float c = vCurv;
+        albedo *= 1.0 + 0.5 * smoothstep(0.04, 0.55, c) - 0.42 * smoothstep(0.0, -0.5, c);
+        vec3 q = p * vec3(7.0, 20.0, 7.0) + vec3(gnoise3(p * 3.0), gnoise3(p * 3.0 + 5.0), 0.0) * 1.6;
+        float vein = smoothstep(0.03, 0.0, abs(gnoise3(q))) * smoothstep(0.08, 0.3, gnoise3(p * 2.4 + 9.0));
+        albedo = mix(albedo, vec3(0.24, 0.245, 0.24), vein * 0.5 * mid);
+        // на верхних гранях оседает ил, по ним же растёт мох
+        albedo *= 1.0 + 0.1 * smoothstep(0.6, 1.0, N.y);
+        float moss = smoothstep(0.62, 0.95, N.y) * smoothstep(0.1, 0.4, gnoise3(p * 14.0));
+        albedo = mix(albedo, vec3(0.02, 0.045, 0.015), moss * (0.2 + uAlgae * 0.75));
+        albedo *= mix(1.0, 0.62, wet);
+        float ao = vAO * (0.72 + 0.28 * smoothstep(-0.6, 0.25, c));
+        vec3 col = shadeInterior(p, V, albedo, N, ao, mix(0.012, 0.09, wet), mix(8.0, 26.0, wet), 0.0);
         col = applyWater(col, p);
         gl_FragColor = vec4(col, 1.0);
       }`,

@@ -2,7 +2,7 @@
 // фарфор над водой), поведение (стая-боиды, скалярии, коридорасы), выбор мышью.
 import THREE from './three.js'
 import { INNER, WATER_MAX, SPECIES, FILTER } from './config.js'
-import { UNIFORMS, NOISE, WATER } from './glsl.js'
+import { UNIFORMS, NOISE, WATER, ENV } from './glsl.js'
 import { sandHeight, ROCK_SHAPES, rockLocal, flowAt } from './terrain.js'
 import { mulberry32, clamp, noise3 } from './noise.js'
 
@@ -30,76 +30,103 @@ function monotone(keys) {
   }
 }
 
-// тело рыбы: длина от носа (x=+0.5) до хвостового стебля (x=-0.5) равна 1
+// сплайн Катмулла–Рома по точкам любой размерности, t ∈ [0, 1]
+function spline(pts) {
+  const n = pts.length
+  return t => {
+    const f = Math.min(Math.max(t, 0), 1) * (n - 1)
+    const i = Math.min(Math.floor(f), n - 2)
+    const u = f - i, u2 = u * u, u3 = u2 * u
+    const p0 = pts[Math.max(i - 1, 0)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(i + 2, n - 1)]
+    return p1.map((_, k) => 0.5 * (2 * p1[k] + (-p0[k] + p2[k]) * u + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * u2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * u3))
+  }
+}
+
+// Тело рыбы: длина от носа (x=+0.5) до хвостового стебля (x=-0.5) равна 1.
+// Силуэт задан верхним и нижним контуром, сечение — «линза» (острые спинной и брюшной гребни).
 const SPECS = {
   tetra: {
-    h: monotone([[0, 0], [0.006, 0.05], [0.02, 0.09], [0.06, 0.15], [0.14, 0.21], [0.3, 0.262], [0.48, 0.25], [0.7, 0.17], [0.86, 0.105], [1, 0.085]]),
-    w: monotone([[0, 0], [0.006, 0.04], [0.03, 0.08], [0.15, 0.12], [0.35, 0.13], [0.6, 0.1], [0.85, 0.05], [1, 0.035]]),
-    yc: monotone([[0, -0.012], [0.3, 0.0], [0.6, 0.008], [1, 0.012]]),
-    caudal: { len: 0.34, spread: 0.18, fork: 0.55 },
-    dorsal: { u0: 0.42, u1: 0.56, h: 0.13, sweep: 0.09 },
-    anal: { u0: 0.56, u1: 0.82, h: 0.085, sweep: 0.05 },
-    pectoral: { u: 0.24, len: 0.12, drop: 0.3 },
-    adipose: { u: 0.83, h: 0.035 },
-    eye: [0.405, 0.022, 0.058],
+    top: monotone([[0, 0.004], [0.03, 0.04], [0.1, 0.085], [0.25, 0.125], [0.42, 0.135], [0.6, 0.108], [0.8, 0.066], [1, 0.045]]),
+    bot: monotone([[0, -0.012], [0.03, -0.045], [0.1, -0.082], [0.25, -0.118], [0.42, -0.124], [0.6, -0.098], [0.8, -0.06], [1, -0.04]]),
+    w: monotone([[0, 0], [0.02, 0.028], [0.1, 0.052], [0.3, 0.064], [0.5, 0.058], [0.8, 0.032], [1, 0.022]]),
+    lens: 0.25,
+    fins: [
+      { part: 1, kind: 'caudal', edge: [[-0.8, -0.21], [-0.7, -0.09], [-0.63, 0.0], [-0.7, 0.09], [-0.8, 0.21]] },
+      { part: 2, kind: 'top', u0: 0.44, u1: 0.57, off: [[-0.02, 0.1], [-0.06, 0.15], [-0.1, 0.1], [-0.09, 0.02]] },
+      { part: 2, kind: 'top', u0: 0.82, u1: 0.87, off: [[-0.01, 0.028], [-0.03, 0.03], [-0.03, 0.005]] },
+      { part: 3, kind: 'bottom', u0: 0.58, u1: 0.86, off: [[-0.03, -0.085], [-0.05, -0.075], [-0.06, -0.03], [-0.04, -0.005]] },
+    ],
+    pectoral: { u: 0.25, len: 0.12, drop: 0.35 },
+    pelvic: { kind: 'fin', u: 0.47, len: 0.07 },
+    eye: [0.41, 0.012, 0.05], op: 0.33, mouth: -0.004,
     wave: [5.6, 0.014, 0.1],
     pick: [0.62, 0.22, 0.14],
   },
   angel: {
-    h: monotone([[0, 0], [0.01, 0.1], [0.05, 0.25], [0.15, 0.48], [0.3, 0.64], [0.46, 0.65], [0.62, 0.5], [0.8, 0.28], [0.92, 0.17], [1, 0.14]]),
-    w: monotone([[0, 0], [0.01, 0.03], [0.06, 0.07], [0.2, 0.1], [0.45, 0.11], [0.7, 0.08], [0.9, 0.04], [1, 0.03]]),
-    yc: monotone([[0, -0.03], [0.25, 0.0], [1, 0.01]]),
-    caudal: { len: 0.36, spread: 0.3, fork: -0.35 },
-    dorsal: { u0: 0.26, u1: 0.8, apex: [-0.7, 0.98], bulge: 0.08 },
-    anal: { u0: 0.3, u1: 0.82, apex: [-0.66, -0.95], bulge: 0.07 },
-    pectoral: { u: 0.3, len: 0.13, drop: 0.1 },
-    pelvic: { u: 0.26, len: 0.95 },
-    eye: [0.36, 0.075, 0.062],
+    top: monotone([[0, 0.0], [0.03, 0.05], [0.1, 0.15], [0.2, 0.29], [0.32, 0.41], [0.45, 0.435], [0.6, 0.36], [0.75, 0.22], [0.9, 0.1], [1, 0.066]]),
+    bot: monotone([[0, -0.012], [0.03, -0.05], [0.1, -0.14], [0.2, -0.27], [0.32, -0.37], [0.45, -0.39], [0.6, -0.32], [0.75, -0.19], [0.9, -0.09], [1, -0.06]]),
+    w: monotone([[0, 0], [0.02, 0.022], [0.08, 0.045], [0.2, 0.065], [0.4, 0.07], [0.65, 0.056], [0.85, 0.036], [1, 0.026]]),
+    lens: 0.55,
+    fins: [
+      { part: 1, kind: 'caudal', edge: [[-0.84, -0.32], [-0.72, -0.15], [-0.67, 0.0], [-0.72, 0.15], [-0.84, 0.32]] },
+      { part: 2, kind: 'top', u0: 0.3, u1: 0.9, edge: [[0.2, 0.48], [0.1, 0.72], [-0.08, 0.93], [-0.3, 1.06], [-0.52, 1.14], [-0.56, 0.9], [-0.5, 0.5], [-0.42, 0.14]] },
+      { part: 3, kind: 'bottom', u0: 0.32, u1: 0.9, edge: [[0.18, -0.44], [0.08, -0.68], [-0.1, -0.9], [-0.32, -1.02], [-0.52, -1.1], [-0.55, -0.86], [-0.49, -0.46], [-0.41, -0.12]] },
+    ],
+    pectoral: { u: 0.3, len: 0.13, drop: 0.12 },
+    pelvic: { kind: 'thread', u: 0.3, pts: [[0.2, -0.36], [0.15, -0.7], [0.05, -1.05], [-0.1, -1.32]], width: 0.016 },
+    eye: [0.355, 0.075, 0.052], op: 0.27, mouth: -0.006,
     wave: [4.2, 0.008, 0.06],
     pick: [0.65, 0.62, 0.12],
   },
   cory: {
-    h: monotone([[0, 0], [0.008, 0.07], [0.04, 0.15], [0.15, 0.27], [0.35, 0.33], [0.55, 0.3], [0.8, 0.18], [1, 0.12]]),
-    w: monotone([[0, 0], [0.008, 0.07], [0.05, 0.13], [0.2, 0.22], [0.4, 0.22], [0.7, 0.15], [1, 0.07]]),
-    yc: monotone([[0, -0.05], [0.12, -0.02], [0.35, 0.0], [1, 0.03]]),
+    top: monotone([[0, 0.0], [0.04, 0.09], [0.12, 0.2], [0.3, 0.275], [0.5, 0.25], [0.75, 0.15], [1, 0.08]]),
+    bot: monotone([[0, -0.04], [0.04, -0.085], [0.15, -0.125], [0.4, -0.13], [0.7, -0.095], [1, -0.055]]),
+    w: monotone([[0, 0], [0.03, 0.055], [0.15, 0.11], [0.35, 0.12], [0.65, 0.085], [1, 0.035]]),
+    lens: 0.08,
     flatBelly: true,
-    caudal: { len: 0.3, spread: 0.17, fork: 0.45 },
-    dorsal: { u0: 0.3, u1: 0.46, h: 0.24, sweep: 0.12 },
-    anal: { u0: 0.7, u1: 0.8, h: 0.06, sweep: 0.03 },
-    pectoral: { u: 0.2, len: 0.16, drop: 0.55 },
-    adipose: { u: 0.84, h: 0.05 },
-    eye: [0.33, 0.07, 0.05],
+    fins: [
+      { part: 1, kind: 'caudal', edge: [[-0.78, -0.2], [-0.68, -0.08], [-0.62, 0.0], [-0.68, 0.08], [-0.78, 0.2]] },
+      { part: 2, kind: 'top', u0: 0.29, u1: 0.47, off: [[-0.03, 0.27], [-0.11, 0.33], [-0.18, 0.17], [-0.15, 0.02]] },
+      { part: 2, kind: 'top', u0: 0.82, u1: 0.88, off: [[-0.01, 0.045], [-0.04, 0.05], [-0.04, 0.005]] },
+      { part: 3, kind: 'bottom', u0: 0.7, u1: 0.8, off: [[-0.02, -0.06], [-0.04, -0.05], [-0.04, -0.005]] },
+    ],
+    pectoral: { u: 0.2, len: 0.21, drop: 0.62 },
+    pelvic: { kind: 'fin', u: 0.5, len: 0.08 },
+    barbels: true,
+    eye: [0.325, 0.085, 0.045], op: 0.25, mouth: -0.07,
     wave: [4.8, 0.012, 0.085],
     pick: [0.62, 0.24, 0.17],
   },
 }
 
 function buildGeometry(spec) {
-  const pos = [], body = [], idx = []
-  const vert = (x, y, z, s, v, part, fin) => {
+  const pos = [], body = [], fin = [], idx = []
+  const vert = (x, y, z, s, v, part, fb, fa) => {
     pos.push(x, y, z)
-    body.push(s, v, part, fin)
+    body.push(s, v, part, fb)
+    fin.push(fa, 0)
     return pos.length / 3 - 1
   }
   // тело — трубка из колец
-  const NU = 30, NV = 18
+  const NU = 36, NV = 22
   const ring = []
   for (let i = 0; i <= NU; i++) {
     const u = 0.5 - 0.5 * Math.cos(Math.PI * i / NU)
     const x = 0.5 - u
-    const h = spec.h(u), w = spec.w(u), yc = spec.yc(u)
+    const t = spec.top(u), b = spec.bot(u), w = spec.w(u)
+    const mid = (t + b) / 2, half = (t - b) / 2
     const r = []
     for (let j = 0; j < NV; j++) {
       const a = (j / NV) * Math.PI * 2
-      const cy = Math.cos(a), sz = Math.sin(a)
-      let y = yc + cy * h * 0.5
-      let z = sz * w * 0.5
-      if (spec.flatBelly && cy < -0.35) {
-        const t = (-cy - 0.35) / 0.65
-        y = yc - h * 0.5 * (0.35 + 0.65 * (1 - Math.pow(1 - t, 2)) * 0.55)
-        z *= 1 + t * 0.12
+      const c = Math.cos(a), sn = Math.sin(a)
+      let y = mid + half * c
+      let z = w * sn * (1 - spec.lens * c * c)
+      if (spec.flatBelly && c < -0.3) {
+        const k = (-c - 0.3) / 0.7
+        y = mid - half * (0.3 + 0.7 * (1 - Math.pow(1 - k, 2)) * 0.75)
+        z *= 1 + k * 0.1
       }
-      r.push(vert(x, y, z, u, cy, 0, 0))
+      r.push(vert(x, y, z, u, c, 0, 0, 0))
     }
     ring.push(r)
   }
@@ -109,8 +136,7 @@ function buildGeometry(spec) {
       idx.push(a, c, b, b, c, d)
     }
   }
-  // заглушка у хвостового стебля
-  const tail = vert(-0.5, spec.yc(1), 0, 1, 0, 0, 0)
+  const tail = vert(-0.5, (spec.top(1) + spec.bot(1)) / 2, 0, 1, 0, 0, 0, 0)
   for (let j = 0; j < NV; j++) idx.push(ring[NU][j], tail, ring[NU][(j + 1) % NV])
 
   const patch = (na, nb, fn) => {
@@ -118,7 +144,7 @@ function buildGeometry(spec) {
     for (let b = 0; b <= nb; b++) {
       for (let a = 0; a <= na; a++) {
         const p = fn(a / na, b / nb)
-        vert(p[0], p[1], p[2], p[3], p[4], p[5], p[6])
+        vert(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7])
       }
     }
     for (let b = 0; b < nb; b++) {
@@ -128,77 +154,94 @@ function buildGeometry(spec) {
       }
     }
   }
-  const top = u => spec.yc(u) + spec.h(u) * 0.5
-  const bottom = u => spec.yc(u) - spec.h(u) * 0.5
 
-  // хвостовой плавник
-  const cd = spec.caudal
-  patch(10, 8, (a, b) => {
-    const va = a * 2 - 1
-    const lobe = 1 - cd.fork * (1 - Math.abs(va))
-    const len = cd.len * lobe
-    const x = -0.49 - b * len
-    const hb = spec.h(1) * 0.5
-    const y = spec.yc(1) + va * (hb * (1 - b) + cd.spread * b)
-    return [x, y, 0, 1 + b * len, va * 1.2, 1, b]
-  })
-  // спинной и анальный
-  const fin2 = (f, part, dir) => {
-    if (f.apex) {
-      patch(12, 8, (a, b) => {
-        const u = f.u0 + (f.u1 - f.u0) * a
-        const xb = 0.5 - u, yb = (dir > 0 ? top(u) - 0.01 : bottom(u) + 0.01)
-        const bx = f.apex[0], by = f.apex[1]
-        const x = xb + (bx - xb) * b
-        const y = yb + (by - yb) * b + dir * Math.sin(Math.PI * b) * f.bulge * Math.sin(Math.PI * a)
-        return [x, y, 0, u + b * 0.4, dir * (1.2 + b), part, b]
+  // непарные плавники: основание на контуре тела, внешний край — сплайн
+  for (const f of spec.fins) {
+    if (f.kind === 'caudal') {
+      const edge = spline(f.edge)
+      const t1 = spec.top(1), b1 = spec.bot(1)
+      patch(16, 10, (a, bb) => {
+        const bx = -0.492, by = b1 + (t1 - b1) * (0.06 + 0.88 * a)
+        const e = edge(a)
+        const x = bx + (e[0] - bx) * bb, y = by + (e[1] - by) * bb
+        return [x, y, 0, 1 + (bx - x), (a * 2 - 1) * 1.2, 1, bb, a]
       })
-    } else {
-      patch(8, 6, (a, b) => {
-        const u = f.u0 + (f.u1 - f.u0) * a
-        const xb = 0.5 - u, yb = (dir > 0 ? top(u) - 0.006 : bottom(u) + 0.006)
-        const H = f.h * Math.pow(Math.sin(Math.PI * Math.min(a * 1.25 + 0.05, 1)), 0.75)
-        return [xb - f.sweep * b * (0.4 + a), yb + dir * H * b, 0, u, dir * (1.2 + b), part, b]
-      })
+      continue
     }
-  }
-  fin2(spec.dorsal, 2, 1)
-  fin2(spec.anal, 3, -1)
-  if (spec.adipose) {
-    const f = spec.adipose
-    patch(4, 3, (a, b) => {
-      const u = f.u - 0.03 + a * 0.06
-      return [0.5 - u - b * 0.02, top(u) - 0.004 + f.h * b * Math.sin(Math.PI * a), 0, u, 1.2, 2, b]
+    const dir = f.kind === 'top' ? 1 : -1
+    const edge = f.edge ? spline(f.edge) : null
+    const off = f.off ? spline(f.off) : null
+    const big = !!f.edge
+    patch(big ? 18 : 8, big ? 11 : 6, (a, bb) => {
+      const u = f.u0 + (f.u1 - f.u0) * a
+      const bx = 0.5 - u, by = (dir > 0 ? spec.top(u) : spec.bot(u)) - dir * 0.006
+      let ex, ey
+      if (edge) { const e = edge(a); ex = e[0]; ey = e[1] }
+      else { const o = off(a); ex = bx + o[0]; ey = by + o[1] }
+      const x = bx + (ex - bx) * bb, y = by + (ey - by) * bb
+      // лёгкий изгиб плоскости плавника — он не бумажный
+      const z = Math.sin(Math.PI * bb) * 0.006 * (big ? 1 : 0.5)
+      return [x, y, z, u, dir * (1.2 + bb), f.part, bb, a]
     })
   }
-  // грудные плавники (левый и правый)
+
+  // грудные плавники: скруглённые «вёсла» по бокам
   const pf = spec.pectoral
   for (const side of [-1, 1]) {
     const u = pf.u
-    const x0 = 0.5 - u, y0 = spec.yc(u) - spec.h(u) * 0.5 * pf.drop, z0 = side * spec.w(u) * 0.46
-    patch(3, 5, (a, b) => {
-      const x = x0 + 0.02 - a * 0.045 - b * pf.len * 0.8
-      const y = y0 - b * pf.len * 0.35 * (0.6 + a)
-      const z = z0 + side * b * pf.len * 0.55
-      return [x, y, z, u, -0.2, 4, b]
+    const x0 = 0.5 - u
+    const mid = (spec.top(u) + spec.bot(u)) / 2, half = (spec.top(u) - spec.bot(u)) / 2
+    const y0 = mid - half * pf.drop, z0 = side * spec.w(u) * 0.88
+    patch(7, 6, (a, bb) => {
+      const along = pf.len * (0.5 + 0.5 * Math.sin(Math.PI * a)) * bb
+      const x = x0 + 0.012 - along * 0.85 - (a - 0.5) * 0.045
+      const y = y0 - along * 0.28 + (a - 0.5) * 0.028
+      const z = z0 + side * along * 0.5
+      return [x, y, z, u, -0.2, 4, bb, a]
     })
   }
-  // брюшные нити скалярии
-  if (spec.pelvic) {
-    const f = spec.pelvic
-    for (const side of [-1, 1]) {
-      const u = f.u
-      patch(1, 10, (a, b) => {
-        const x = 0.5 - u - b * f.len * 0.3 + (a - 0.5) * 0.02 * (1 - b)
-        const y = bottom(u) + 0.01 - b * f.len
-        return [x, y, side * (0.02 + b * 0.03), u, -1.5, 5, b]
+
+  // брюшные: у скалярии — длинные гибкие нити, у остальных — маленькие плавники
+  const pv = spec.pelvic
+  for (const side of [-1, 1]) {
+    if (pv.kind === 'thread') {
+      const path = spline(pv.pts)
+      patch(1, 20, (a, bb) => {
+        const c = path(bb), c2 = path(Math.min(bb + 0.02, 1))
+        let tx = c2[0] - c[0], ty = c2[1] - c[1]
+        const tl = Math.hypot(tx, ty) || 1
+        tx /= tl; ty /= tl
+        const wdt = pv.width * (1 - bb * 0.85)
+        return [c[0] - ty * (a - 0.5) * wdt, c[1] + tx * (a - 0.5) * wdt, side * (0.016 + bb * 0.022), pv.u, -1.5, 5, bb, a]
       })
+    } else {
+      const u = pv.u
+      const x0 = 0.5 - u, y0 = spec.bot(u) + 0.008, z0 = side * spec.w(u) * 0.4
+      patch(4, 4, (a, bb) => {
+        const along = pv.len * (0.55 + 0.45 * Math.sin(Math.PI * a)) * bb
+        return [x0 - (a - 0.5) * 0.035 - along * 0.7, y0 - along * 0.6, z0 + side * along * 0.3, u, -1.3, 5, bb, a]
+      })
+    }
+  }
+
+  // усики коридораса
+  if (spec.barbels) {
+    for (const side of [-1, 1]) {
+      for (const k of [0, 1]) {
+        const path = spline([[0.48, -0.045 - k * 0.012, side * 0.012], [0.52, -0.07 - k * 0.01, side * (0.022 + k * 0.012)], [0.54, -0.1 - k * 0.012, side * (0.03 + k * 0.02)]])
+        patch(1, 6, (a, bb) => {
+          const c = path(bb)
+          const wdt = 0.008 * (1 - bb * 0.7)
+          return [c[0], c[1] + (a - 0.5) * wdt, c[2], 0.02, -0.5, 6, bb, a]
+        })
+      }
     }
   }
 
   const geo = new THREE.BufferGeometry()
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
   geo.setAttribute('aBody', new THREE.Float32BufferAttribute(body, 4))
+  geo.setAttribute('aFin', new THREE.Float32BufferAttribute(fin, 2))
   geo.setIndex(idx)
   geo.computeVertexNormals()
   return geo
@@ -207,10 +250,11 @@ function buildGeometry(spec) {
 // ---------------------------------------------------------------- шейдеры
 const FISH_VS = /* glsl */ `
 attribute vec4 aBody;
+attribute vec2 aFin;
 attribute vec4 aSwim;
 attribute vec4 aState;
 uniform vec3 uWave;
-varying vec3 vWorld; varying vec3 vN; varying vec3 vLocal; varying vec4 vBody; varying vec4 vState;
+varying vec3 vWorld; varying vec3 vN; varying vec3 vLocal; varying vec4 vBody; varying vec4 vState; varying vec2 vFin;
 void main() {
   vec3 pos = position;
   vec3 nrm = normal;
@@ -229,11 +273,13 @@ void main() {
     float fl = sin(aSwim.w) * fin;
     pos.z += sign(position.z) * fl * 0.04;
     pos.x += abs(fl) * 0.012;
-  } else if (part > 1.5 && part < 3.5) {
+  } else if (part > 0.5 && part < 3.5) {
     pos.z += sin(aSwim.x * 0.8 + fin * 2.5 + s * 5.0) * 0.012 * fin * (0.3 + amp);
-  } else if (part > 4.5) {
+  } else if (part > 4.5 && part < 5.5) {
     pos.z += sin(aSwim.x * 0.5 + fin * 3.0) * 0.035 * fin;
     pos.x -= fin * fin * 0.06 * amp;
+  } else if (part > 5.5) {
+    pos.y += sin(aSwim.w * 0.7 + fin * 2.0) * 0.006 * fin;
   }
   vLocal = pos;
   mat4 m = modelMatrix * instanceMatrix;
@@ -241,6 +287,7 @@ void main() {
   vWorld = wp.xyz;
   vN = normalize(mat3(m) * nrm);
   vBody = aBody;
+  vFin = aFin;
   vState = aState;
   gl_Position = projectionMatrix * viewMatrix * wp;
 }
@@ -251,118 +298,148 @@ const FISH_FS = /* glsl */ `
 ${UNIFORMS}
 ${NOISE}
 ${WATER}
+${ENV}
 uniform vec3 uEye;
-varying vec3 vWorld; varying vec3 vN; varying vec3 vLocal; varying vec4 vBody; varying vec4 vState;
+uniform float uOp;
+uniform float uMouth;
+varying vec3 vWorld; varying vec3 vN; varying vec3 vLocal; varying vec4 vBody; varying vec4 vState; varying vec2 vFin;
 void main() {
   vec3 p = vWorld;
   vec3 V = normalize(cameraPosition - p);
   vec3 N = dot(vN, vN) > 1e-10 ? normalize(vN) : vec3(0.0, 0.0, 1.0);
   if (!gl_FrontFacing) N = -N;
-  float s = vBody.x, v = vBody.y, part = vBody.z, fin = vBody.w;
+  float s = vBody.x, v = vBody.y, part = vBody.z, fb = vBody.w, fa = vFin.x;
   float pale = vState.x;
   bool isFin = part > 0.5;
+  float ci = abs(dot(N, V));
+  float pxs = length(fwidth(p));
+  float detail = 1.0 - smoothstep(0.00035, 0.0014, pxs);
   vec3 albedo = vec3(0.5);
   vec3 irid = vec3(0.0);
-  float alpha = 1.0, spec = 0.45, gloss = 70.0, trans = 0.0;
-  float ci = abs(dot(N, V));
+  float alpha = 1.0, spec = 0.3, gloss = 50.0, trans = 0.0;
+
+  // лучи плавников и мягкий край
+  float nRays = part < 1.5 ? 20.0 : part < 3.5 ? 16.0 : 9.0;
+  float ray = pow(0.5 + 0.5 * cos(fa * nRays * 6.2831853), 4.0) * detail + (1.0 - detail) * 0.35;
+  float finEdge = smoothstep(1.0, 0.8, fb);
+  float finBase = smoothstep(0.0, 0.3, fb);
 
 #if defined(TETRA)
   if (!isFin) {
-    vec3 back = vec3(0.05, 0.05, 0.035);
-    vec3 belly = vec3(0.32, 0.31, 0.3);
-    vec3 red = vec3(0.34, 0.012, 0.01);
-    float stripe = smoothstep(0.24, 0.12, abs(v - 0.3)) * smoothstep(0.06, 0.13, s) * smoothstep(0.96, 0.84, s);
-    float redM = smoothstep(0.12, -0.12, v) * smoothstep(0.04, 0.12, s) * smoothstep(0.85, -0.6, v);
-    albedo = mix(belly, back, smoothstep(0.3, 0.8, v));
-    albedo = mix(albedo, mix(red, vec3(0.22, 0.14, 0.13), pale * 0.7), redM);
-    vec3 hue = mix(vec3(0.02, 0.28, 0.95), vec3(0.03, 0.75, 0.85), smoothstep(0.15, 0.95, ci));
-    irid = hue * stripe * mix(0.95, 0.18, pale);
-    albedo = mix(albedo, vec3(0.005, 0.012, 0.03), stripe);
-    spec = 0.25; gloss = 40.0;
-    trans = 0.12;
+    vec3 back = vec3(0.06, 0.055, 0.035);
+    vec3 belly = vec3(0.36, 0.35, 0.34);
+    vec3 red = vec3(0.3, 0.013, 0.01);
+    float stripe = smoothstep(0.2, 0.08, abs(v - 0.32)) * smoothstep(0.05, 0.12, s) * smoothstep(0.93, 0.8, s);
+    float redM = smoothstep(0.15, -0.1, v) * smoothstep(0.04, 0.13, s);
+    float silver = smoothstep(-0.5, -0.8, v) * smoothstep(0.5, 0.3, s);
+    albedo = mix(belly, back, smoothstep(0.35, 0.85, v));
+    albedo = mix(albedo, mix(red, vec3(0.2, 0.12, 0.11), pale * 0.7), redM * (1.0 - silver * 0.6));
+    vec3 hue = mix(vec3(0.02, 0.3, 0.95), vec3(0.03, 0.8, 0.85), smoothstep(0.15, 0.95, ci));
+    irid = hue * stripe * mix(1.0, 0.18, pale);
+    albedo = mix(albedo, vec3(0.004, 0.01, 0.025), stripe);
+    spec = 0.35; gloss = 60.0; trans = 0.12;
   } else {
-    albedo = vec3(0.4, 0.41, 0.42);
-    alpha = 0.26 - fin * 0.1;
-    trans = 0.5;
-    spec = 0.03;
-    if (part < 1.5) albedo = mix(albedo, vec3(0.32, 0.05, 0.04), (1.0 - fin) * 0.5 * (1.0 - pale));
+    albedo = vec3(0.38, 0.39, 0.4) * (0.9 + 0.25 * ray);
+    alpha = (0.14 + 0.22 * ray) * finEdge * (0.55 + 0.45 * (1.0 - fb));
+    if (part < 1.5) albedo = mix(albedo, vec3(0.3, 0.05, 0.04), (1.0 - fb) * 0.55 * (1.0 - pale));
+    trans = 0.5; spec = 0.05; gloss = 30.0;
   }
 #elif defined(ANGEL)
   float x = vLocal.x;
-  float bands = smoothstep(0.045, 0.02, abs(x - 0.36 + 0.02 * v))
-              + smoothstep(0.07, 0.035, abs(x - 0.07 + 0.03 * v))
-              + smoothstep(0.055, 0.025, abs(x + 0.24 + 0.03 * v)) * 0.9
-              + smoothstep(0.035, 0.015, abs(x + 0.47)) * 0.7;
+  float bands = smoothstep(0.045, 0.018, abs(x - 0.355 + 0.02 * v))
+              + smoothstep(0.075, 0.03, abs(x - 0.06 + 0.035 * v))
+              + smoothstep(0.06, 0.022, abs(x + 0.25 + 0.035 * v)) * 0.95
+              + smoothstep(0.035, 0.012, abs(x + 0.47)) * 0.7;
   bands = clamp(bands, 0.0, 1.0);
+  float fineStripes = 0.5 + 0.5 * sin(x * 70.0 + v * 2.0);
   if (!isFin) {
-    albedo = mix(vec3(0.5, 0.5, 0.48), vec3(0.62, 0.56, 0.42), smoothstep(0.3, 0.9, v) * 0.5);
-    albedo = mix(albedo, vec3(0.02, 0.02, 0.022), bands * mix(0.92, 0.7, pale));
-    irid = vec3(0.05, 0.08, 0.1) * pow(1.0 - ci, 2.0) * (1.0 - bands);
-    spec = 0.8; gloss = 90.0;
+    albedo = mix(vec3(0.46, 0.47, 0.46), vec3(0.55, 0.52, 0.43), smoothstep(0.3, 0.95, v) * 0.6);
+    albedo *= 0.95 + 0.05 * fineStripes;
+    albedo = mix(albedo, vec3(0.018, 0.018, 0.02), bands * mix(0.92, 0.7, pale));
+    irid = vec3(0.04, 0.07, 0.09) * pow(1.0 - ci, 2.0) * (1.0 - bands);
+    spec = 0.6; gloss = 80.0;
   } else {
-    albedo = mix(vec3(0.42, 0.44, 0.43), vec3(0.03), bands * 0.8);
-    alpha = 0.5 - fin * 0.25;
-    if (part > 4.5) { albedo = vec3(0.55, 0.55, 0.53); alpha = 0.65; }
-    if (part < 1.5) alpha = 0.32 - fin * 0.15;
-    trans = 0.45;
-    spec = 0.03;
+    albedo = mix(vec3(0.44, 0.45, 0.44) * (0.85 + 0.3 * ray), vec3(0.025), bands * 0.85);
+    alpha = mix(0.2 + 0.35 * ray, 0.75, bands * 0.6) * finEdge * (0.4 + 0.6 * (1.0 - fb * 0.7));
+    if (part > 4.5) { albedo = vec3(0.6, 0.6, 0.58); alpha = 0.72 * smoothstep(1.0, 0.7, fb); }
+    trans = 0.45; spec = 0.04; gloss = 30.0;
   }
 #elif defined(CORY)
   float x = vLocal.x;
   if (!isFin) {
-    albedo = vec3(0.55, 0.47, 0.42);
-    // маска «панды» через глаз и пятно у хвоста
-    float mask = smoothstep(0.07, 0.04, abs(x - uEye.x)) * smoothstep(-0.12, -0.02, vLocal.y);
-    float tailSpot = smoothstep(0.075, 0.05, length(vec2(x + 0.43, vLocal.y - 0.025)));
-    albedo = mix(albedo, vec3(0.015), max(mask, tailSpot));
-    // пластины панциря
-    albedo *= 0.9 + 0.1 * smoothstep(0.2, 0.8, abs(sin(x * 60.0)));
-    albedo *= 0.9 + 0.1 * smoothstep(0.03, 0.0, abs(vLocal.y - 0.01));
-    spec = 0.55; gloss = 60.0;
+    albedo = vec3(0.5, 0.41, 0.37);
+    // костные пластины вдоль боков и боковая линия
+    float plates = smoothstep(0.08, 0.0, abs(fract(x * 22.0) - 0.5) - 0.38);
+    float lat = smoothstep(0.022, 0.0, abs(vLocal.y - 0.02));
+    albedo *= 1.0 - plates * 0.08 * detail;
+    albedo *= 1.0 - lat * 0.12;
+    float mask = smoothstep(0.1, 0.07, length((vLocal.xy - uEye.xy) * vec2(1.0, 0.8)));
+    float tailSpot = smoothstep(0.08, 0.05, length(vec2(x + 0.43, vLocal.y - 0.02)));
+    albedo = mix(albedo, vec3(0.014), max(mask, tailSpot));
+    spec = 0.5; gloss = 55.0;
   } else {
-    albedo = vec3(0.45, 0.44, 0.42);
-    alpha = 0.32 - fin * 0.1;
-    if (part > 1.5 && part < 2.5) { albedo = vec3(0.02); alpha = 0.8 - fin * 0.3; }
-    trans = 0.45;
-    spec = 0.03;
+    albedo = vec3(0.44, 0.43, 0.41) * (0.85 + 0.3 * ray);
+    alpha = (0.22 + 0.25 * ray) * finEdge;
+    if (part > 1.5 && part < 2.5) { albedo = vec3(0.02); alpha = (0.75 + 0.2 * ray) * finEdge; }
+    if (part > 5.5) { albedo = vec3(0.5, 0.45, 0.42); alpha = 0.9 * smoothstep(1.0, 0.7, fb); }
+    trans = 0.45; spec = 0.04; gloss = 30.0;
   }
 #endif
 
-  // глаз
   if (!isFin) {
+    // чешуя
+    vec3 sc = voronoi(vec2(vLocal.x * 48.0, vLocal.y * 48.0 + vLocal.z * 36.0));
+    float rim = smoothstep(0.0, 0.35, sc.y - sc.x);
+    albedo *= mix(1.0, 0.9 + 0.12 * rim, detail);
+    spec *= mix(1.0, 0.65 + 0.7 * rim, detail);
+    // жаберная крышка
+    float opx = uOp - 0.12 * vLocal.y * vLocal.y;
+    float op = smoothstep(0.014, 0.0, abs(vLocal.x - opx)) * smoothstep(0.3, 0.1, abs(vLocal.y));
+    albedo *= 1.0 - op * 0.3;
+    // рот
+    float mouth = smoothstep(0.01, 0.0, abs(vLocal.y - uMouth)) * smoothstep(0.43, 0.49, vLocal.x);
+    albedo *= 1.0 - mouth * 0.55;
+    // глаз
     vec2 e = vLocal.xy - uEye.xy;
     float er = length(e) / uEye.z;
-    if (er < 1.0 && abs(vLocal.z) > 0.012) {
-      float pupil = smoothstep(0.6, 0.52, er);
+    if (er < 1.0 && abs(vLocal.z) > 0.004) {
+      float ring = smoothstep(1.0, 0.86, er);
+      float pupil = smoothstep(0.62, 0.55, er);
 #if defined(ANGEL)
-      vec3 iris = vec3(0.45, 0.03, 0.02);
+      vec3 iris = vec3(0.32, 0.04, 0.02);
 #elif defined(TETRA)
-      vec3 iris = mix(vec3(0.35, 0.4, 0.45), vec3(0.08, 0.3, 0.6), step(0.0, e.y));
+      vec3 iris = mix(vec3(0.3, 0.32, 0.34), vec3(0.06, 0.26, 0.5), step(0.0, e.y));
 #else
-      vec3 iris = vec3(0.2, 0.18, 0.15);
+      vec3 iris = vec3(0.16, 0.14, 0.12);
 #endif
-      albedo = mix(iris, vec3(0.004), pupil);
-      irid = vec3(0.0);
-      spec = 0.12;
-      gloss = 60.0;
+      albedo = mix(albedo, mix(iris, vec3(0.003), pupil), ring);
+      irid *= 1.0 - ring;
+      spec = mix(spec, 0.5, ring);
+      gloss = mix(gloss, 140.0, ring);
     }
   }
 
-  // над водой рыба застывает фарфором: цвет уходит вместе с водой
+  // над водой — глазурованный фарфор: цвет уходит вместе с водой
   float living = smoothstep(0.0025, -0.0025, p.y - uWaterY);
   float lum = dot(albedo, vec3(0.3, 0.55, 0.15));
-  vec3 porcelain = vec3(0.74, 0.72, 0.68) * (0.93 + 0.12 * smoothstep(0.02, 0.3, lum));
-  albedo = mix(porcelain, albedo, living);
+  vec3 porc = vec3(0.8, 0.78, 0.74) * (0.93 + 0.1 * smoothstep(0.02, 0.3, lum));
+  if (isFin) porc *= (0.9 + 0.12 * ray) * (0.88 + 0.12 * finBase);
+  albedo = mix(porc, albedo, living);
   irid *= living;
-  alpha = mix(isFin ? 0.94 : 1.0, alpha, living);
-  spec = mix(0.35, spec, living);
-  gloss = mix(30.0, gloss, living);
-  trans = mix(0.25, trans, living);
+  alpha = mix(isFin ? (0.62 + 0.25 * ray) * finEdge + 0.1 : 1.0, alpha, living);
+  spec = mix(0.1, spec, living);
+  gloss = mix(24.0, gloss, living);
+  trans = mix(isFin ? 0.55 : 0.2, trans, living);
 
   vec3 col = shadeInterior(p, V, albedo + irid, N, 1.0, spec, gloss, trans);
-  // лёгкий ободок — рыбы читаются на тёмном фоне
-  col += (uAmbTop * 0.6 + uLampColor * 0.015) * pow(1.0 - ci, 3.0) * 0.5 * living;
-  // выделение по клику
+  // глазурь: прозрачный лак с френелем и бликом лампы
+  float coat = (1.0 - living) * (0.04 + 0.96 * pow(1.0 - ci, 5.0));
+  vec3 R = reflect(-V, N);
+  vec3 L = lampDir(p);
+  col += coat * (envRadiance(p, R) * 1.2 + uLampColor * 0.25 * pow(max(dot(R, L), 0.0), 90.0));
+  col += (1.0 - living) * uLampColor * 0.1 * pow(max(dot(R, L), 0.0), 60.0) * (isFin ? 0.3 : 1.0);
+  // ободок: рыбы читаются на тёмном фоне
+  col += (uAmbTop * 0.6 + uLampColor * 0.012) * pow(1.0 - ci, 3.0) * 0.5 * living;
   col += vec3(0.25, 0.32, 0.35) * vState.z * pow(1.0 - ci, 2.0) * (0.05 + length(uLampColor) * 0.004);
   col = applyWater(col, p);
   gl_FragColor = vec4(col, alpha);
@@ -370,7 +447,7 @@ void main() {
 `
 
 const SHADOW_FS = /* glsl */ `
-varying vec3 vWorld; varying vec3 vN; varying vec3 vLocal; varying vec4 vBody; varying vec4 vState;
+varying vec3 vWorld; varying vec3 vN; varying vec3 vLocal; varying vec4 vBody; varying vec4 vState; varying vec2 vFin;
 void main() {
   float k = 1.0 - clamp((vWorld.y - 0.09) / 0.55, 0.0, 0.72);
   if (vBody.z > 0.5) k *= 0.35;
@@ -424,6 +501,8 @@ function makeMaterial(S, kind, spec, shadow) {
       ...S,
       uWave: { value: new THREE.Vector3(...spec.wave) },
       uEye: { value: new THREE.Vector3(...spec.eye) },
+      uOp: { value: spec.op },
+      uMouth: { value: spec.mouth },
     },
     defines: def,
     vertexShader: FISH_VS,
@@ -854,13 +933,13 @@ export class Aquarium {
     // направление: к скорости, плавно; при зависании держим прежнее
     if (sp > 0.004) {
       _v.copy(f.v).multiplyScalar(1 / sp)
-      if (f.kind === 'cory' && f.state === 'forage') _v.y -= 0.55
+      if (f.kind === 'cory' && f.state === 'forage') _v.y -= 0.32
       if (f.kind === 'angel') _v.y *= 0.45
       _v.normalize()
       const k = 1 - Math.exp(-dt * (f.kind === 'angel' ? 2.2 : 6))
       f.f.lerp(_v, k).normalize()
     } else if (f.kind === 'cory' && f.state === 'forage') {
-      _v.copy(f.f).setY(-0.5).normalize()
+      _v.copy(f.f).setY(-0.3).normalize()
       f.f.lerp(_v, 1 - Math.exp(-dt * 3)).normalize()
     }
     const yaw = Math.atan2(f.f.z, f.f.x)
