@@ -226,6 +226,30 @@ function init() {
 
 document.getElementById('replay-btn').addEventListener('click', init)
 init()
+
+// ?demo — игра сама с собой для живого превью на карточке портфолио
+if (new URLSearchParams(location.search).has('demo')) {
+  const seen = {}
+  const tiles = () => document.querySelectorAll('#grid .card')
+  const pick = () => {
+    if (matched === 8) { setTimeout(() => { for (const k in seen) delete seen[k]; init(); setTimeout(pick, 700) }, 1500); return }
+    if (locked) return setTimeout(pick, 250)
+    const open = cards.map((c, i) => i).filter(i => !cards[i].matched && !cards[i].flipped)
+    let i
+    if (flipped.length === 1) {
+      const want = cards[flipped[0]].icon
+      i = open.find(j => seen[j] === want && j !== flipped[0])
+    } else {
+      // известная пара — забираем её
+      for (const a of open) { const b = open.find(j => j !== a && seen[j] && seen[j] === seen[a]); if (b !== undefined) { i = a; break } }
+    }
+    if (i === undefined) i = open.find(j => !seen[j]) ?? open[0]
+    seen[i] = cards[i].icon
+    tiles()[i].click()
+    setTimeout(pick, 520)
+  }
+  setTimeout(pick, 600)
+}
 </script>
 </body>
 </html>
