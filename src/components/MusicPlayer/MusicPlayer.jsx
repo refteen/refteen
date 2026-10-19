@@ -1,9 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { FaMusic, FaTimes } from 'react-icons/fa'
 import './MusicPlayer.css'
 
 export default function MusicPlayer() {
   const [open, setOpen] = useState(false)
+
+  // открыть плеер из другого блока — например, карточки «Слушаю»
+  useEffect(() => {
+    const onMusic = () => setOpen(true)
+    window.addEventListener('portfolio:music', onMusic)
+    return () => window.removeEventListener('portfolio:music', onMusic)
+  }, [])
 
   return (
     <div className={`music-player ${open ? 'music-player--open' : ''}`}>

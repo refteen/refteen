@@ -161,6 +161,18 @@ PRESETS.forEach((p) => {
 });
 
 update();
+
+// ?demo — пресеты и угол меняются сами для живого превью на карточке портфолио
+if (new URLSearchParams(location.search).has('demo')) {
+  const btns = [...document.querySelectorAll('.preset-btn')]
+  let k = 0
+  btns[0].click()
+  setInterval(() => { k = (k + 1) % btns.length; btns[k].click() }, 1400)
+  setInterval(() => {
+    if (gType !== 'linear') return
+    ang.value = (+ang.value + 2) % 360; angval.textContent = ang.value + '°'; update()
+  }, 40)
+}
 </script>
 </body>
 </html>

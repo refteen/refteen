@@ -18,6 +18,7 @@ canvas { display: block; background: #080818; }
 .hint { font-size: 12px; color: #555; letter-spacing: 1px; }
 #final-score { font-size: 18px; color: #fff; }
 .hidden { display: none !important; }
+body.demo #header, body.demo #score-bar { display: none; }
 </style>
 </head>
 <body>
@@ -127,6 +128,43 @@ document.addEventListener('keydown', e => {
 });
 
 init();
+
+// ?demo — автопилот для живого превью на карточке портфолио
+if (new URLSearchParams(location.search).has('demo')) {
+  document.body.classList.add('demo');
+  const free = (x, y, body) => x>=0 && x<W && y>=0 && y<H && !body.some(s => s.x===x && s.y===y);
+  // сколько клеток доступно из точки — чтобы не заезжать в тупик
+  const room = (sx, sy, body) => {
+    const seen = new Set([sx+','+sy]), q = [[sx, sy]];
+    while (q.length && seen.size < 120) {
+      const [x, y] = q.shift();
+      for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+        const k = (x+dx)+','+(y+dy);
+        if (!seen.has(k) && free(x+dx, y+dy, body)) { seen.add(k); q.push([x+dx, y+dy]); }
+      }
+    }
+    return seen.size;
+  };
+  const think = () => {
+    const h = snake[0], body = snake.slice(0, -1);
+    let best = null, bestScore = -Infinity;
+    for (const d of [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}]) {
+      if (d.x === -dir.x && d.y === -dir.y) continue;
+      const nx = h.x + d.x, ny = h.y + d.y;
+      if (!free(nx, ny, body)) continue;
+      const space = room(nx, ny, body);
+      const dist = Math.abs(nx - food.x) + Math.abs(ny - food.y);
+      const sc = (space < snake.length + 2 ? -1000 : 0) + space * 0.05 - dist;
+      if (sc > bestScore) { bestScore = sc; best = d; }
+    }
+    if (best) nextDir = best;
+  };
+  const _step = step;
+  step = function () { think(); _step(); };
+  gameOver = function () { running = false; clearTimeout(loopId); setTimeout(startGame, 500); };
+  localStorage.getItem = () => 0; localStorage.setItem = () => {};
+  startGame();
+}
 </script>
 </body>
 </html>

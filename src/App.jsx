@@ -2,6 +2,7 @@ import Navbar from './components/Navbar/Navbar'
 import Home from './components/Home/Home'
 import About from './components/About/About'
 import Stats from './components/Stats/Stats'
+import Now from './components/Now/Now'
 import Skills from './components/Skills/Skills'
 import Projects from './components/Projects/Projects'
 import Terminal from './components/Terminal/Terminal'
@@ -28,6 +29,7 @@ function App() {
       <Home />
       <About />
       <Stats />
+      <Now />
       <Skills />
       <Projects />
       <Terminal />

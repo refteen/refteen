@@ -97,7 +97,9 @@ export default function CustomCursor() {
 
     const onOver = e => {
       if (e.target instanceof HTMLIFrameElement) { setHidden(true); return }
-      const el = e.target.closest(SEL)
+      let el = e.target.closest(SEL)
+      // крупные карточки не тянем магнитом — кольцо вокруг них выглядит громоздко
+      if (el && el.hasAttribute('data-no-magnet')) el = null
       if (el && el !== target) {
         if (target) target.style.transform = ''
         target = el

@@ -19,6 +19,7 @@ const projects = [
     color: '#38bdf8',
     bg: 'linear-gradient(135deg, #0c2a3a 0%, #0a1628 100%)',
     app: null,
+    preview: { type: 'slides', files: ['map.jpg', 'listing.jpg', 'booking.jpg', 'account.jpg'].map(f => '/refteen/cases/derevnyamap/' + f) },
     // Подробный кейс — открывается кнопкой «Смотреть кейс» на баннере
     caseStudy: {
       slug: 'derevnyamap',
@@ -71,6 +72,22 @@ const projects = [
           desc: 'Бэкенд вынесен в отдельный сервис и репозиторий: авторизация, объекты, бронирования, загрузка изображений. Фронтенд и API развиваются независимо.',
         },
       ],
+      challenges: [
+        {
+          title: 'Сотни меток без тормозов',
+          desc: 'Если рисовать каждый объект отдельной меткой, карта захлёбывается уже на мелком масштабе. Кластеризация собирает соседние объекты в одну метку и раскрывает их по мере приближения.',
+        },
+        {
+          title: 'Гость и владелец в одном аккаунте',
+          desc: 'Не хотелось заставлять владельца заводить второй профиль. Роль хранится в пользователе, а кабинет собирается из разделов под неё — один логин, два разных интерфейса.',
+        },
+        {
+          title: 'Фронт и API раздельно',
+          desc: 'Бэкенд живёт в своём репозитории и деплоится отдельно: схема данных на Prisma, JWT-авторизация, CORS — фронтенд общается с ним только через REST.',
+        },
+      ],
+      result:
+        'Платформа работает в продакшене на derevnya-map.ru: туристы находят жильё на карте и бронируют без переписок, владельцы ведут объекты из кабинета, а монетизация заложена с первого дня через подписку.',
       stack: [
         { group: 'Frontend', items: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS', 'Яндекс.Карты API'] },
         { group: 'Backend', items: ['Node.js', 'TypeScript', 'REST API'] },
@@ -103,6 +120,8 @@ const projects = [
     appWide: true,
     // обложка баннера; пока файла нет — обычный баннер с иконкой
     poster: '/refteen/cases/aquarium/poster.jpg',
+    // живое превью при наведении на карточку
+    preview: { type: 'video', src: '/refteen/cases/aquarium/preview.webm' },
     caseStudy: {
       slug: 'aquarium',
       tagline: 'Живой аквариум в браузере: 3D, свет и звук в реальном времени — без единого файла ассетов',
@@ -150,6 +169,22 @@ const projects = [
           desc: 'Гул фильтра, бульканье, стук по стеклу, шум наливаемой воды — всё синтезируется через Web Audio в реальном времени, без единого аудиофайла.',
         },
       ],
+      challenges: [
+        {
+          title: 'Ноль ассетов',
+          desc: 'Без моделей и текстур всё — от формы камня до чешуи — пришлось описать процедурно: шум, SDF и параметры. Зато вся инсталляция весит как одна картинка.',
+        },
+        {
+          title: 'Плавно и на телефоне',
+          desc: 'Волны, каустики, объёмный свет и bloom дорого стоят. Рендер сам следит за временем кадра и снижает разрешение и число шагов, если устройство не вытягивает.',
+        },
+        {
+          title: 'Звук, который слушается сцены',
+          desc: 'Каждый звук синтезируется и зависит от состояния мира: уровень воды, мутность, день или ночь, где именно стукнули по стеклу. Лимитер и пул голосов не дают звуку развалиться, даже когда пузырьков сотни.',
+        },
+      ],
+      result:
+        'Законченная инсталляция, которая запускается прямо в браузере — на компьютере и на телефоне — и живёт своей жизнью, пока на неё смотрят. Её можно открыть здесь же, на сайте.',
       stack: [
         { group: 'Графика', items: ['Three.js', 'WebGL', 'GLSL-шейдеры'] },
         { group: 'Симуляция', items: ['Boids', 'Волновое уравнение на GPU', 'Каустики'] },
@@ -181,6 +216,41 @@ const projects = [
     color: '#3178c6',
     bg: 'linear-gradient(135deg, #0a1a2e 0%, #080f1e 100%)',
     app: null,
+    caseStudy: {
+      slug: 'derevnyamap-backend',
+      tagline: 'REST API платформы Derevnya Map: пользователи, объекты, отзывы, бронирования и избранное',
+      meta: [
+        { k: 'Роль', v: 'Проектирование и разработка API' },
+        { k: 'Тип', v: 'REST-сервис' },
+        { k: 'Данные', v: 'PostgreSQL через Prisma' },
+        { k: 'Авторизация', v: 'JWT + bcrypt' },
+      ],
+      problem:
+        'Фронтенду Derevnya Map нужен был отдельный сервис, который хранит объекты с координатами, отзывы, бронирования и избранное, ' +
+        'различает гостя и владельца и не пускает к чужим данным. Хотелось, чтобы API можно было развивать и деплоить независимо от сайта.',
+      solution: [
+        { title: 'Авторизация', desc: 'Регистрация и вход с хешированием паролей через bcrypt, выдача JWT, эндпоинт /auth/me и middleware, которое защищает приватные маршруты.' },
+        { title: 'Объекты', desc: 'Список, карточка и поиск мест с координатами, ценой, удобствами, кухней, расписанием и галереей. Добавлять объекты могут только авторизованные пользователи.' },
+        { title: 'Отзывы', desc: 'Отзывы с рейтингом по объекту; удалить отзыв может только его автор.' },
+        { title: 'Бронирования и избранное', desc: 'Заявки на даты заезда и выезда, список своих бронирований, добавление и удаление мест из избранного.' },
+        { title: 'Схема данных', desc: 'Пять моделей в Prisma: User, Place, Review, Booking, Favorite — со связями и каскадным удалением, которые не оставляют «висячих» записей.' },
+        { title: 'Healthcheck', desc: 'Отдельный эндпоинт /api/health для мониторинга и проверки деплоя.' },
+      ],
+      challenges: [
+        { title: 'Целостность данных', desc: 'Удаление места должно забирать его отзывы и брони, а удаление пользователя — не ломать чужие отзывы. Решено правилами onDelete: Cascade и SetNull прямо в схеме.' },
+        { title: 'Доступ к чужому', desc: 'Приватные маршруты берут пользователя из проверенного токена, а не из параметров запроса.' },
+      ],
+      result: 'API обслуживает фронтенд Derevnya Map: сайт и сервис развиваются независимо и общаются только через REST.',
+      stack: [
+        { group: 'Сервер', items: ['Node.js', 'Express', 'TypeScript'] },
+        { group: 'Данные', items: ['PostgreSQL', 'Prisma ORM'] },
+        { group: 'Безопасность', items: ['JWT', 'bcrypt', 'CORS'] },
+      ],
+      links: [
+        { label: 'Исходный код', href: 'https://github.com/refteen/derevnyamap-backend', icon: <FaGithub />, primary: true },
+        { label: 'Сам сайт', href: 'https://derevnya-map.ru', icon: <FaExternalLinkAlt /> },
+      ],
+    },
   },
   {
     title: 'AnimalFeedPlanner',
@@ -192,6 +262,39 @@ const projects = [
     color: '#f59e0b',
     bg: 'linear-gradient(135deg, #2a1a05 0%, #140c02 100%)',
     app: null,
+    caseStudy: {
+      slug: 'animalfeedplanner',
+      tagline: 'Десктопный калькулятор рационов для коров, свиней и кур — курсовой проект на Java',
+      meta: [
+        { k: 'Роль', v: 'Автор' },
+        { k: 'Формат', v: 'Десктопное приложение' },
+        { k: 'Контекст', v: 'Курсовой проект' },
+        { k: 'Данные', v: 'JSON, без БД' },
+      ],
+      problem:
+        'Рацион сельхозживотного считают вручную по таблицам: сколько белка и энергии нужно под цель — поддержать вес или набрать массу — и какими кормами это закрыть. ' +
+        'Задача — сделать программу, которая подбирает соотношение кормов сама и наглядно показывает результат.',
+      solution: [
+        { title: 'Справочник кормов', desc: 'Таблица кормов с составом и питательностью, данные подгружаются из встроенного feeds.json.' },
+        { title: 'Животное и цель', desc: 'Выбор животного и цели кормления — от них зависят потребности в белке и энергии.' },
+        { title: 'Автоматический расчёт', desc: 'FeedCalculator подбирает соотношение кормов, а движок рекомендаций подсказывает, что изменить.' },
+        { title: 'График питательных веществ', desc: 'Отдельная панель рисует распределение белка и энергии в итоговом рационе.' },
+        { title: 'Сохранение', desc: 'Рацион сохраняется в ration.json и загружается обратно.' },
+      ],
+      challenges: [
+        { title: 'Честное ООП', desc: 'Абстрактный Animal и наследники Cow, Pig, Chicken со своими потребностями: новое животное добавляется классом, без правок в расчёте.' },
+        { title: 'Слои отдельно', desc: 'Модель, логика и интерфейс разнесены по пакетам model / logic / ui — Swing не знает, как считается рацион.' },
+      ],
+      result: 'Рабочее Swing-приложение, которое за пару кликов собирает рацион под животное и цель и показывает его на графике.',
+      stack: [
+        { group: 'Язык', items: ['Java 23'] },
+        { group: 'Интерфейс', items: ['Swing'] },
+        { group: 'Сборка и данные', items: ['Maven', 'JSON'] },
+      ],
+      links: [
+        { label: 'Исходный код', href: 'https://github.com/refteen/AnimalFeedPlanner', icon: <FaGithub />, primary: true },
+      ],
+    },
   },
   {
     title: 'TG MTProto Proxy Parser',
@@ -203,6 +306,41 @@ const projects = [
     color: '#2aabee',
     bg: 'linear-gradient(135deg, #062b40 0%, #03131f 100%)',
     app: null,
+    caseStudy: {
+      slug: 'mtproto',
+      tagline: 'Находит бесплатные MTProto-прокси и оставляет только те, что действительно работают',
+      meta: [
+        { k: 'Роль', v: 'Автор' },
+        { k: 'Формат', v: 'Десктоп, Windows .exe' },
+        { k: 'Сеть', v: 'asyncio, до 80 проверок разом' },
+        { k: 'Сервер', v: 'Не нужен — всё локально' },
+      ],
+      problem:
+        'В публичных каналах полно MTProto-прокси, но большинство давно мертвы. Обычные чекеры просто стучатся в порт — а открытый порт ещё не значит рабочий прокси. ' +
+        'Хотелось одной кнопкой собрать свежие прокси, по-настоящему их проверить и сразу подключить лучший в Telegram.',
+      solution: [
+        { title: 'Парсинг без API', desc: 'Семь публичных каналов читаются через веб-превью t.me/s/<канал> — без ключей и авторизации. Ссылки достаются регулярками и дедуплицируются.' },
+        { title: 'Настоящий хендшейк', desc: 'Для Basic и Secure — obfuscated2 с AES-CTR и запрос req_pq_multi до ответа resPQ от дата-центра Telegram. Для FakeTLS — ClientHello и криптографическая сверка HMAC в ответе.' },
+        { title: 'Пинг и страна', desc: 'Пинг — время полного хендшейка, сортировка по нему из коробки. Страна определяется по IP пачками.' },
+        { title: 'Подключение в один клик', desc: 'Открывает tg://proxy, Telegram сам предлагает применить прокси; без Desktop — уходит на t.me/proxy.' },
+        { title: 'Удобства', desc: 'Свои ссылки пачкой, кэш между запусками, автообновление по таймеру, экспорт живых прокси и контекстное меню.' },
+        { title: 'Сборка в .exe', desc: 'PyInstaller упаковывает всё в один файл — запуск двойным кликом, Python ставить не нужно.' },
+      ],
+      challenges: [
+        { title: 'Отличить прокси от сайта', desc: 'FakeTLS-прокси маскируется под обычный HTTPS на 443 порту. Отличить его можно, только проверив HMAC в ответе сервера, — это доказывает, что на той стороне прокси, знающий секрет.' },
+        { title: 'Сеть и интерфейс вместе', desc: 'Десятки одновременных асинхронных проверок не должны вешать окно tkinter: результаты попадают в таблицу по мере готовности.' },
+      ],
+      result: 'В список попадают только прокси, прошедшие реальную проверку протокола, отсортированные по пингу, — подключение к Telegram занимает один клик.',
+      stack: [
+        { group: 'Язык', items: ['Python 3.9+'] },
+        { group: 'Сеть и крипто', items: ['asyncio', 'AES-CTR', 'HMAC-SHA256', 'MTProto'] },
+        { group: 'Интерфейс', items: ['tkinter'] },
+        { group: 'Сборка', items: ['PyInstaller'] },
+      ],
+      links: [
+        { label: 'Исходный код и .exe', href: 'https://github.com/refteen/telegram-mtproto-proxy-parser', icon: <FaGithub />, primary: true },
+      ],
+    },
   },
   {
     title: 'Snake Game',
@@ -214,6 +352,38 @@ const projects = [
     color: '#4ade80',
     bg: 'linear-gradient(135deg, #0a1e0e 0%, #060f08 100%)',
     app: '/refteen/apps/snake/index.html',
+    // мини-версия самого приложения в режиме автопилота
+    preview: { type: 'app', src: '/refteen/apps/snake/index.html?demo' },
+    caseStudy: {
+      slug: 'snake',
+      tagline: 'Классическая змейка на Canvas — с нарастающей скоростью и автопилотом для превью',
+      meta: [
+        { k: 'Роль', v: 'Автор' },
+        { k: 'Формат', v: 'Веб, один HTML-файл' },
+        { k: 'Зависимости', v: 'Ноль' },
+        { k: 'Демо', v: 'Запускается прямо здесь' },
+      ],
+      problem: 'Хотелось сделать знакомую игру аккуратно: без фреймворков, с приятной графикой и честной сложностью, которая растёт вместе со счётом.',
+      solution: [
+        { title: 'Игровой цикл', desc: 'Сетка 25×20, шаг по таймеру; каждые 5 очков игра ускоряется.' },
+        { title: 'Управление', desc: 'Стрелки и WASD; разворот на 180° заблокирован, чтобы змейка не врезалась в себя одной клавишей.' },
+        { title: 'Графика', desc: 'Тело переливается из фиолетового в голубой, еда светится радиальным градиентом.' },
+        { title: 'Рекорд', desc: 'Лучший счёт хранится в localStorage и переживает перезагрузку.' },
+      ],
+      challenges: [
+        { title: 'Автопилот для превью', desc: 'Для живой карточки в портфолио змейка играет сама: выбирает ход к еде и заранее считает, сколько свободного места останется после него, чтобы не заехать в тупик.' },
+      ],
+      result: 'Лёгкая игра в одном файле, которая запускается мгновенно — а в превью на карточке играет сама с собой.',
+      stack: [
+        { group: 'Отрисовка', items: ['HTML5 Canvas'] },
+        { group: 'Логика', items: ['JavaScript'] },
+        { group: 'Хранение', items: ['localStorage'] },
+      ],
+      links: [
+        { label: 'Попробовать', action: 'app', icon: <FaPlay />, primary: true },
+        { label: 'Исходный код', href: 'https://github.com/refteen/snake-game', icon: <FaGithub /> },
+      ],
+    },
   },
   {
     title: 'Memory Game',
@@ -225,6 +395,38 @@ const projects = [
     color: '#f59e0b',
     bg: 'linear-gradient(135deg, #1e1500 0%, #110c00 100%)',
     app: '/refteen/apps/typing/index.html',
+    // мини-версия самого приложения в режиме автопилота
+    preview: { type: 'app', src: '/refteen/apps/typing/index.html?demo' },
+    caseStudy: {
+      slug: 'memory',
+      tagline: 'Игра на память с карточками технологий: ходы, таймер и ранг по итогу',
+      meta: [
+        { k: 'Роль', v: 'Автор' },
+        { k: 'Формат', v: 'Веб, один HTML-файл' },
+        { k: 'Зависимости', v: 'Ноль' },
+        { k: 'Демо', v: 'Запускается прямо здесь' },
+      ],
+      problem: 'Простая механика «найди пару» — хороший повод поработать с CSS 3D-анимацией и состоянием игры без единой библиотеки.',
+      solution: [
+        { title: 'Поле 4×4', desc: 'Восемь пар карточек с иконками технологий перемешиваются при каждом запуске.' },
+        { title: '3D-флип', desc: 'Переворот карточек на CSS 3D transforms.' },
+        { title: 'Счёт', desc: 'Ходы, таймер с первого клика и ранг по результату — от «Продолжай» до «Легенды».' },
+        { title: 'Экран победы', desc: 'Стеклянная панель на backdrop-filter с итогами и кнопкой новой игры.' },
+      ],
+      challenges: [
+        { title: 'Блокировка поля', desc: 'Пока две несовпавшие карточки показываются, поле заблокировано — иначе быстрые клики ломают пары.' },
+        { title: 'Автоигра для превью', desc: 'В режиме превью игра запоминает открытые карточки и сама собирает пары, как внимательный игрок.' },
+      ],
+      result: 'Аккуратная мини-игра без зависимостей, которая работает в любом браузере и сама себя демонстрирует на карточке.',
+      stack: [
+        { group: 'Анимация', items: ['CSS 3D transforms', 'backdrop-filter'] },
+        { group: 'Логика', items: ['JavaScript'] },
+      ],
+      links: [
+        { label: 'Попробовать', action: 'app', icon: <FaPlay />, primary: true },
+        { label: 'Исходный код', href: 'https://github.com/refteen/memory-game', icon: <FaGithub /> },
+      ],
+    },
   },
   {
     title: 'CSS Gradient Generator',
@@ -236,6 +438,37 @@ const projects = [
     color: '#c770f0',
     bg: 'linear-gradient(135deg, #1a0a24 0%, #0f0614 100%)',
     app: '/refteen/apps/gradient/index.html',
+    // мини-версия самого приложения в режиме автопилота
+    preview: { type: 'app', src: '/refteen/apps/gradient/index.html?demo' },
+    caseStudy: {
+      slug: 'gradient',
+      tagline: 'Генератор CSS-градиентов: весь экран — живое превью',
+      meta: [
+        { k: 'Роль', v: 'Автор' },
+        { k: 'Формат', v: 'Веб, один HTML-файл' },
+        { k: 'Зависимости', v: 'Ноль' },
+        { k: 'Демо', v: 'Запускается прямо здесь' },
+      ],
+      problem: 'Подбирать градиент в коде вслепую неудобно. Нужен инструмент, где результат виден сразу и на большой площади, а готовый CSS копируется одной кнопкой.',
+      solution: [
+        { title: 'Живое превью', desc: 'Градиент заливает весь фон и меняется в реальном времени.' },
+        { title: 'Гибкая настройка', desc: 'Два или три цвета, linear или radial, угол от 0° до 360°.' },
+        { title: 'Пресеты', desc: 'Шесть готовых сочетаний — отправная точка в один клик.' },
+        { title: 'Копирование', desc: 'Готовая строка background копируется через Clipboard API.' },
+      ],
+      challenges: [
+        { title: 'Читаемость на любом фоне', desc: 'Панель управления стеклянная, на backdrop-filter, — остаётся читаемой поверх любого градиента.' },
+      ],
+      result: 'Быстрый инструмент вместо ручного подбора градиентов: настроил, увидел, скопировал.',
+      stack: [
+        { group: 'Интерфейс', items: ['HTML', 'CSS', 'backdrop-filter'] },
+        { group: 'Логика', items: ['JavaScript', 'Clipboard API'] },
+      ],
+      links: [
+        { label: 'Попробовать', action: 'app', icon: <FaPlay />, primary: true },
+        { label: 'Исходный код', href: 'https://github.com/refteen/css-gradient-generator', icon: <FaGithub /> },
+      ],
+    },
   },
   {
     title: 'AutoAccept Dota 2',
@@ -309,8 +542,15 @@ function Shot({ src, path, caption, color }) {
 
 // Баннер карточки. Постер (если указан) проявляется поверх иконки, как только загрузится;
 // нет файла или он не открылся — остаётся обычный баннер с иконкой.
-function Banner({ project: p, onOpen }) {
+function Banner({ project: p, onOpen, live }) {
   const [poster, setPoster] = useState('loading') // loading → ready | failed
+  // короткая задержка: карточки, по которым курсор лишь пробежал, ничего не загружают
+  const [armed, setArmed] = useState(false)
+  useEffect(() => {
+    if (!live || !p.preview) { setArmed(false); return }
+    const id = setTimeout(() => setArmed(true), 140)
+    return () => clearTimeout(id)
+  }, [live, p.preview])
 
   return (
     <div
@@ -324,6 +564,7 @@ function Banner({ project: p, onOpen }) {
           <img src={p.poster} alt="" loading="lazy" onLoad={() => setPoster('ready')} onError={() => setPoster('failed')} />
         </div>
       )}
+      {armed && <LivePreview preview={p.preview} />}
       <div className="project-card__banner-dots">
         {[...Array(12)].map((_, j) => (
           <span key={j} className="banner-dot" style={{ opacity: 0.06 + (j % 3) * 0.06 }} />
@@ -343,6 +584,36 @@ function Banner({ project: p, onOpen }) {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+// Живое превью баннера: монтируется только пока на карточку наведён курсор,
+// проявляется, когда готово, и снимается при уходе — в покое карточки ничего не грузят.
+function LivePreview({ preview: pv }) {
+  const [ready, setReady] = useState(false)
+  const [slide, setSlide] = useState(0)
+
+  useEffect(() => {
+    if (pv.type !== 'slides') return
+    setReady(true)
+    const id = setInterval(() => setSlide(n => (n + 1) % pv.files.length), 1600)
+    return () => clearInterval(id)
+  }, [pv])
+
+  return (
+    <div className={ready ? 'live-preview live-preview--ready' : 'live-preview'} aria-hidden="true">
+      {pv.type === 'video' && (
+        <video src={pv.src} muted loop playsInline autoPlay onPlaying={() => setReady(true)} />
+      )}
+      {pv.type === 'app' && (
+        // приложение рисуется втрое крупнее и ужимается — получается миниатюра настоящего окна
+        <iframe src={pv.src} title="" tabIndex={-1} className="live-preview__app" onLoad={() => setTimeout(() => setReady(true), 250)} />
+      )}
+      {pv.type === 'slides' && pv.files.map((f, i) => (
+        <img key={f} src={f} alt="" className={i === slide ? 'is-on' : ''} />
+      ))}
+      <span className="live-preview__badge"><i />live</span>
     </div>
   )
 }
@@ -406,6 +677,30 @@ function CaseBody({ project, onLaunch }) {
         </div>
       </section>
 
+      {c.challenges && (
+        <section className="case__block">
+          <h4 className="case__h" style={{ '--hc': color }}>Что было сложно</h4>
+          <div className="case__solution">
+            {c.challenges.map(s => (
+              <div key={s.title} className="case__item">
+                <span className="case__item-mark case__item-mark--ring" style={{ borderColor: color }} />
+                <div>
+                  <p className="case__item-title">{s.title}</p>
+                  <p className="case__item-desc">{s.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {c.result && (
+        <section className="case__block">
+          <h4 className="case__h" style={{ '--hc': color }}>Результат</h4>
+          <p className="case__text case__result" style={{ '--hc': color }}>{c.result}</p>
+        </section>
+      )}
+
       <section className="case__block">
         <h4 className="case__h" style={{ '--hc': color }}>Стек</h4>
         <div className="case__stack">
@@ -422,7 +717,7 @@ function CaseBody({ project, onLaunch }) {
         </div>
       </section>
 
-      <section className="case__block">
+      {c.shots?.length > 0 && <section className="case__block">
         <h4 className="case__h" style={{ '--hc': color }}>Как это выглядит</h4>
         <div className="case__shots">
           {c.shots.map(s => (
@@ -435,7 +730,7 @@ function CaseBody({ project, onLaunch }) {
             />
           ))}
         </div>
-      </section>
+      </section>}
     </div>
   )
 }
@@ -446,6 +741,7 @@ const fullscreenUrl = p => p.app.replace(/index\.html$/, '')
 export default function Projects() {
   // { project, mode: 'app' | 'case' } — какой проект открыт и что в окне: само приложение или кейс
   const [modal, setModal] = useState(null)
+  const [hovered, setHovered] = useState(null)
   const isOpen = modal !== null
 
   const open = (project, mode) => setModal({ project, mode })
@@ -539,11 +835,12 @@ export default function Projects() {
               transition={{ delay: i * 0.1, duration: 0.5 }}
               whileHover={{ y: -6 }}
               onMouseMove={handleTilt}
-              onMouseLeave={resetTilt}
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={e => { resetTilt(e); setHovered(h => (h === i ? null : h)) }}
             >
               <div className="project-card__tilt">
                 <span className="project-card__glare" />
-                <Banner project={p} onOpen={open} />
+                <Banner project={p} onOpen={open} live={hovered === i && !isOpen} />
 
               <div className="project-card__body">
                 <div className="project-card__top">
