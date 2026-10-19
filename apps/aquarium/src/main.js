@@ -26,7 +26,7 @@ const [uiMod, audioMod] = await Promise.all([
 
 const noop = () => {}
 const ui = uiMod?.createUI
-  ? uiMod.createUI({ root: uiRoot, onEnter, onAction, onIdle })
+  ? uiMod.createUI({ root: uiRoot, onEnter, onAction, onIdle, onVolume })
   : new Proxy({}, { get: () => noop })
 const audio = audioMod?.AquariumAudio ? new audioMod.AquariumAudio() : new Proxy({}, { get: (t, k) => (k === 'enabled' || k === 'blocked' ? false : noop) })
 const call = (obj, name, ...args) => { try { return obj[name]?.(...args) } catch (e) { console.warn(name, e) } }
@@ -248,6 +248,24 @@ function startDrain() {
 }
 function startFill() {
   state.waterDir = 1
+}
+
+// ---------------------------------------------------------------- громкость
+const VOL_KEY = 'natura-viva:volume'
+function loadVolume() {
+  try { const v = parseFloat(localStorage.getItem(VOL_KEY)); if (v >= 0 && v <= 1) return v } catch (e) {}
+  return 0.8
+}
+function onVolume(v) {
+  call(audio, 'setVolume', v)
+  try { localStorage.setItem(VOL_KEY, String(v)) } catch (e) {}
+  // подвинули ползунок при выключенном звуке — значит, хотят слышать
+  if (v > 0 && !state.sound) toggleSound()
+}
+{
+  const v = loadVolume()
+  call(audio, 'setVolume', v)
+  call(ui, 'setVolume', v)
 }
 
 async function toggleSound() {
