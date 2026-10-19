@@ -25,6 +25,23 @@ export default function CustomCursor() {
     let target = null
     let raf
     let audioCtx = null
+    let hidden = false
+
+    // отпустить «примагниченный» элемент (в т.ч. если его уже нет в DOM — модалка закрылась)
+    const release = () => {
+      if (target) target.style.transform = ''
+      target = null
+      ring.classList.remove('cursor-ring--active')
+    }
+
+    // над iframe (кейсы, игрушки) и за пределами окна родительская страница не получает
+    // mousemove — кастомный курсор замирал на месте; прячем его, там работает системный
+    const setHidden = h => {
+      if (h === hidden) return
+      hidden = h
+      document.documentElement.classList.toggle('cursor-hidden', h)
+      if (h) release()
+    }
 
     // создаём аудио-контекст и «разблокируем» его на первом жесте пользователя
     // (браузеры не дают проигрывать звук до любого взаимодействия)
@@ -58,6 +75,11 @@ export default function CustomCursor() {
     const onMove = e => {
       mx = e.clientX
       my = e.clientY
+      if (hidden && !(e.target instanceof HTMLIFrameElement)) {
+        // возвращаемся без «перелёта» кольца через весь экран
+        setHidden(false)
+        rx = gx = tx = mx; ry = gy = ty = my
+      }
       dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`
       if (target) {
         const b = target.getBoundingClientRect()
@@ -74,6 +96,7 @@ export default function CustomCursor() {
     }
 
     const onOver = e => {
+      if (e.target instanceof HTMLIFrameElement) { setHidden(true); return }
       const el = e.target.closest(SEL)
       if (el && el !== target) {
         if (target) target.style.transform = ''
@@ -84,14 +107,16 @@ export default function CustomCursor() {
     }
 
     const onOut = e => {
+      if (!e.relatedTarget) { setHidden(true); return }   // курсор ушёл за окно
       if (!target) return
       if (e.relatedTarget && target.contains(e.relatedTarget)) return
-      target.style.transform = ''
-      target = null
-      ring.classList.remove('cursor-ring--active')
+      release()
     }
 
+    const onBlur = () => setHidden(true)   // фокус ушёл внутрь iframe / в другое окно
+
     const loop = () => {
+      if (target && !target.isConnected) release()
       rx += (tx - rx) * 0.22
       ry += (ty - ry) * 0.22
       rw += (tw - rw) * 0.22
@@ -109,12 +134,15 @@ export default function CustomCursor() {
     }
 
     window.addEventListener('mousemove', onMove)
+    window.addEventListener('blur', onBlur)
     document.addEventListener('mouseover', onOver)
     document.addEventListener('mouseout', onOut)
     loop()
 
     return () => {
       window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('blur', onBlur)
+      document.documentElement.classList.remove('cursor-hidden')
       document.removeEventListener('mouseover', onOver)
       document.removeEventListener('mouseout', onOut)
       unlockEvents.forEach(ev => window.removeEventListener(ev, unlockAudio))

@@ -44,7 +44,19 @@ html.cursor-active * {
   pointer-events: none;
   z-index: 9999;
   will-change: transform, width, height, border-radius;
-  transition: background 0.25s, border-color 0.25s;
+  transition: background 0.25s, border-color 0.25s, opacity 0.2s;
+}
+
+html.cursor-hidden .cursor-dot,
+html.cursor-hidden .cursor-ring,
+html.cursor-hidden .cursor-bg-glow {
+  opacity: 0;
+}
+
+.cursor-dot,
+.cursor-ring,
+.cursor-bg-glow {
+  transition: opacity 0.2s;
 }
 
 .cursor-ring--active {

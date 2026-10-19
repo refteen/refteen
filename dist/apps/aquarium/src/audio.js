@@ -5,7 +5,7 @@
 // Граф:
 //   источники → шины категорий (room / water / mech / glass / pad / bells)
 //   шина → master (сухой сигнал) и → посыл в общий ревербератор (ConvolverNode, «музейный зал»)
-//   master → лимитер (DynamicsCompressor) → trim → out (mute / скрытая вкладка) → destination
+//   master → лимитер (DynamicsCompressor) → trim → vol (громкость) → out (mute / скрытая вкладка) → destination
 //
 // Публичный API — класс AquariumAudio (внизу файла). Методы никогда не бросают исключений;
 // до start() и в выключенном состоянии разовые звуки молча игнорируются.
@@ -440,6 +440,7 @@ export class AquariumAudio {
     this._revStep = 0; this._revNext = 0; this._revLast = -10
     this._paneStep = 0; this._paneLast = -10
     this._gestureArmed = false
+    this._volume = 0.8
     this._onVis = this._onVis.bind(this)
     this._onGesture = this._onGesture.bind(this)
   }
@@ -495,6 +496,21 @@ export class AquariumAudio {
         this._applyOut(MUTE_TC)
         this._idleSuspendSoon()     // после затухания усыпляем контекст — ноль нагрузки
       }
+    } catch (e) { this._warn(e) }
+  }
+
+  get volume() { return this._volume }
+
+  // Громкость слушателя 0…1, плавно и без щелчков
+  setVolume(v) {
+    try {
+      v = Math.min(1, Math.max(0, Number(v) || 0))
+      this._volume = v
+      const c = this._ctx, g = this._volG
+      if (!c || !g) return
+      const t = c.currentTime
+      g.gain.cancelScheduledValues(t)
+      g.gain.setTargetAtTime(v * v, t, 0.03)
     } catch (e) { this._warn(e) }
   }
 
@@ -668,8 +684,10 @@ export class AquariumAudio {
 
     const out = this._outG = gainNode(c, 0)
     out.connect(c.destination)
+    const vol = this._volG = gainNode(c, this._volume * this._volume)   // громкость слушателя (квадрат — ближе к слуху)
+    vol.connect(out)
     const trim = gainNode(c, LIMITER_TRIM)
-    trim.connect(out)
+    trim.connect(vol)
     const lim = c.createDynamicsCompressor()
     lim.threshold.value = LIMITER.threshold
     lim.knee.value = LIMITER.knee

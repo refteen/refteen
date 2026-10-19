@@ -43,7 +43,7 @@ export default function Navbar() {
         ))}
       </ul>
 
-      <a href="#contact" className="nav__cta">Нанять меня</a>
+      <a href="#contact" className="nav__cta">Обсудить проект</a>
 
       <button className="nav__burger" onClick={() => setOpen(!open)} aria-label="menu">
         <span className={open ? 'x' : ''} />
@@ -70,7 +70,7 @@ export default function Navbar() {
                 {l.label}
               </Link>
             ))}
-            <a href="#contact" className="nav__cta-mobile" onClick={() => setOpen(false)}>Нанять меня</a>
+            <a href="#contact" className="nav__cta-mobile" onClick={() => setOpen(false)}>Обсудить проект</a>
           </motion.div>
         )}
       </AnimatePresence>

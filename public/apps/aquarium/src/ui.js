@@ -3,7 +3,7 @@
    Vanilla ES module, no dependencies. Builds every piece of UI DOM inside
    opts.root and exposes a small imperative API for main.js:
 
-     const ui = createUI({ root, onEnter, onAction, onIdle })
+     const ui = createUI({ root, onEnter, onAction, onIdle, onVolume })
      ui.setProgress(p)        0..1 on the loading veil
      ui.setReady()            veil holds ~400 ms, dissolves, calls onEnter(true)
      ui.showError(message)    graceful fatal message on the veil
@@ -12,6 +12,7 @@
      ui.setMode(mode)         'viva' | 'morta'
      ui.setHUD(h)             { temp, ph, o2, murk, level, alive, frozen, night }
      ui.setAudioBlocked(b)    «Включить звук» pill while audio is suspended
+     ui.setVolume(v)          0..1 on the volume slider (opts.onVolume(v) on drag)
      ui.callout(info) · ui.moveCallout(x, y, visible) · ui.hideCallout()
      ui.toast(text, ms)
      ui.setCursor(kind)       cursor of canvas#scene
@@ -239,8 +240,12 @@ function template() {
   <div class="nv-hud">
     <p class="nv-hud__line"></p>
     <div class="nv-hud__tools">
-      <button type="button" class="nv-tool" data-action="sound" aria-pressed="false" aria-keyshortcuts="M"
-        aria-label="Звук" data-tip="Звук · M">${ICON.sound}</button>
+      <div class="nv-vol">
+        <input type="range" class="nv-vol__range" min="0" max="100" step="1" value="80"
+          aria-label="Громкость" style="--v:80%">
+        <button type="button" class="nv-tool" data-action="sound" aria-pressed="false" aria-keyshortcuts="M"
+          aria-label="Звук" data-tip="Звук · M">${ICON.sound}</button>
+      </div>
       <button type="button" class="nv-tool" data-action="cinema" aria-pressed="false" aria-keyshortcuts="C"
         aria-label="Режим кино: камера движется сама" data-tip="Кино · C">${ICON.cinema}</button>
       <button type="button" class="nv-tool" data-action="fullscreen" aria-pressed="false"
@@ -328,6 +333,7 @@ export function createUI(opts = {}) {
   const emitEnter = guard(opts.onEnter);
   const emitAction = guard(opts.onAction);
   const emitIdle = guard(opts.onIdle);
+  const emitVolume = guard(opts.onVolume);
 
   const mqReduced = matchMediaSafe('(prefers-reduced-motion: reduce)');
   const mqTouch = matchMediaSafe('(hover: none) and (pointer: coarse)');
@@ -347,6 +353,7 @@ export function createUI(opts = {}) {
     hud: $('.nv-hud'),
     hudLine: $('.nv-hud__line'),
     tSound: $('.nv-tool[data-action="sound"]'),
+    vol: $('.nv-vol__range'),
     tCinema: $('.nv-tool[data-action="cinema"]'),
     tFs: $('.nv-tool[data-action="fullscreen"]'),
     dock: $('.nv-dock'),
@@ -1194,7 +1201,28 @@ export function createUI(opts = {}) {
   setHUD({ temp: 24.6, ph: 6.8, o2: 8.1, murk: 0, level: 1, alive: 72, frozen: 0, night: false });
   levelKnown = false;
 
+  /* ---------- volume ---------- */
+
+  function paintVolume(v) {
+    const pct = Math.round(Math.min(1, Math.max(0, v)) * 100);
+    el.vol.value = String(pct);
+    el.vol.style.setProperty('--v', pct + '%');
+    el.vol.setAttribute('aria-valuetext', pct + '%');
+  }
+  function setVolume(v) { paintVolume(Number(v) || 0); }
+  el.vol.addEventListener('input', () => {
+    const v = Number(el.vol.value) / 100;
+    paintVolume(v);
+    emitVolume(v);
+  });
+  // the slider must not steal the scene's shortcuts or the click handler
+  el.vol.addEventListener('pointerdown', (e) => e.stopPropagation());
+  el.vol.addEventListener('keydown', (e) => {
+    if (/^Arrow|^Page|^Home$|^End$/.test(e.key)) e.stopPropagation();
+  });
+
   return {
+    setVolume,
     setProgress,
     setReady,
     showError,
